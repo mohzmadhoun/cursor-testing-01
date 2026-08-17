@@ -22,6 +22,7 @@ branch switches. Only your own code is versioned: everything in `plugins/` (and
 ## Repository layout
 
 ```
+CHANGELOG.md               Running record of the work done, one entry per pull request
 .cursor/environment.json   Cloud Agent environment definition
 .cursor/install.sh         Builds the stack: packages, database, WordPress, test suite
 .cursor/start.sh           Per-boot startup: MariaDB, Apache, plugin symlinks
@@ -43,7 +44,8 @@ the same session. Useful things to include in the request:
 - what the plugin should do, and where it appears (admin screen, block, shortcode, REST route, cron job);
 - that it should live in `plugins/<slug>/`, generated with `bin/new-plugin.sh <slug>`;
 - that it must pass `composer check` (coding standards, static analysis, tests);
-- any behaviour worth an integration test, so the agent adds one to `plugins/<slug>/tests/`.
+- any behaviour worth an integration test, so the agent adds one to `plugins/<slug>/tests/`;
+- that it should add an entry to [CHANGELOG.md](CHANGELOG.md), which records what each pull request changed and how it was verified.
 
 For example: *"Create a plugin `event-countdown` that renders a shortcode counting
 down to a date set on a settings page. Cover the date parsing and the shortcode
