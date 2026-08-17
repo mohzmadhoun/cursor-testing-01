@@ -129,7 +129,12 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
   environment builds first lacked `/var/lock/apache2`, then proved the
   `/run/lock` parent itself is absent. Apache configuration now recreates the
   sticky parent and the package directory with Debian's expected ownership and
-  modes before invoking package helpers.
+  modes both during install and runtime startup. This distinction matters:
+  building the image succeeded before a fresh agent proved `start.sh` still
+  encountered the same empty volatile tree.
+- The persistent install log contains only the latest run. Appending preserved
+  resolved warnings in a successful snapshot and made a fresh agent correctly
+  flag historical failures as current health problems.
 
 ### Commits
 
@@ -140,6 +145,7 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | `285ac64` | Preserve the OpenAI environment during Apache config checks |
 | `8a62b41` | Recreate Apache lock state after snapshot boot |
 | `259ead8` | Recreate the volatile lock parent after snapshot boot |
+| `00faf89` | Recreate volatile runtime state during startup |
 | _this entry_ | Document the OpenAI provider, credential setup, and verification |
 
 ---
