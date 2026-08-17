@@ -310,6 +310,10 @@ install_composer_dependencies() {
 	fi
 	if [ -n "$token" ]; then
 		export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"${token}\"}}"
+	else
+		# Without a token, downloading in a burst trips GitHub's secondary rate
+		# limit, so trade a little speed for a much better chance of finishing.
+		export COMPOSER_MAX_PARALLEL_HTTP=3
 	fi
 
 	local attempt
