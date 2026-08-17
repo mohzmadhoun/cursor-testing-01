@@ -130,6 +130,11 @@ install_composer() {
 configure_apache() {
 	log "Configuring Apache (document root ${WP_DIR}, user $(id -un))"
 
+	# /var/lock is backed by /run and therefore disappears across a snapshot
+	# boot. Debian's Apache helpers need their subdirectory even for config
+	# operations such as a2enmod.
+	sudo install -d -o www-data -g root -m 0755 /var/lock/apache2
+
 	# Serving as the agent's own user keeps every file the web server writes
 	# (uploads, plugin installs, debug.log) editable without sudo.
 	sudo sed -i \
