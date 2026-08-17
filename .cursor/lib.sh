@@ -34,6 +34,9 @@ mariadb_is_up() {
 }
 
 start_mariadb() {
+	# /run is volatile and absent when a saved environment boots.
+	sudo install -d -o root -g root -m 1777 /run/lock
+
 	if mariadb_is_up; then
 		return 0
 	fi
@@ -75,6 +78,12 @@ start_apache() {
 	if [ -n "${OPENAI_API_KEY:-}" ]; then
 		env_fingerprint="$(printf '%s' "$OPENAI_API_KEY" | sha256sum | awk '{print $1}')"
 	fi
+
+	# Environment snapshots intentionally exclude volatile /run state. Recreate
+	# both the symlink target and Apache's lock directory on every boot, before
+	# a2enconf or apache2ctl has a chance to need them.
+	sudo install -d -o root -g root -m 1777 /run/lock
+	sudo install -d -o www-data -g root -m 0755 /var/lock/apache2
 
 	configure_openai_apache_env
 

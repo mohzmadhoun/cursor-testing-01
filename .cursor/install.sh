@@ -13,10 +13,11 @@ WP_CLI_VERSION="${WP_CLI_VERSION:-2.12.0}"
 
 # Keep a copy of the output. Whether the platform preserves the setup log for a
 # given run varies, and a failed install is the hardest thing to diagnose after
-# the fact. Redirecting here rather than piping the whole script keeps the exit
-# code of the install itself.
+# the fact. Keep only the latest run so a repaired failure does not look like a
+# current warning in future agents. Redirecting here rather than piping the whole
+# script keeps the exit code of the install itself.
 INSTALL_LOG="${INSTALL_LOG:-/tmp/wordpress-install.log}"
-exec > >(tee -a "$INSTALL_LOG") 2>&1
+exec > >(tee "$INSTALL_LOG") 2>&1
 printf '\n=== %s: %s ===\n' "$(date -u '+%Y-%m-%d %H:%M:%SZ')" "$0"
 
 # The database account is authenticated by MariaDB's unix_socket plugin, which
