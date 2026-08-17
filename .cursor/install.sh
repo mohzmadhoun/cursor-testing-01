@@ -133,6 +133,7 @@ configure_apache() {
 	# /var/lock is backed by /run and therefore disappears across a snapshot
 	# boot. Debian's Apache helpers need their subdirectory even for config
 	# operations such as a2enmod.
+	sudo install -d -o root -g root -m 1777 /run/lock
 	sudo install -d -o www-data -g root -m 0755 /var/lock/apache2
 
 	# Serving as the agent's own user keeps every file the web server writes
