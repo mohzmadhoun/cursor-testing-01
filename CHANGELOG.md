@@ -125,6 +125,11 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
   strips arbitrary variables even when `sudo` preserves them, so keyed starts
   use `apache2ctl` directly with `PassEnv`. The value is never written to the
   repository, Apache configuration, WordPress database, logs, or snapshots.
+- **Snapshot boots lose `/run`.** `/var/lock` points into that volatile tree, so
+  the first successful environment build reached `a2enmod` without
+  `/var/lock/apache2` and failed before installation. Apache configuration now
+  recreates the directory with Debian's expected `www-data:root` ownership and
+  mode before invoking package helpers.
 
 ### Commits
 
@@ -133,6 +138,7 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | `e2a0ec0` | Install WooCommerce and seed the sample catalogue |
 | `1f15c06` | Install the OpenAI AI provider by default |
 | `285ac64` | Preserve the OpenAI environment during Apache config checks |
+| `8a62b41` | Recreate Apache lock state after snapshot boot |
 | _this entry_ | Document the OpenAI provider, credential setup, and verification |
 
 ---
