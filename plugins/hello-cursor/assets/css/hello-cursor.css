@@ -1,0 +1,9 @@
+.hello-cursor-greeting {
+	display: inline-block;
+	padding: 0.5em 0.9em;
+	border-radius: 6px;
+	background: #f0f6fc;
+	border: 1px solid #c3d9ed;
+	font-weight: 600;
+	color: #1d3557;
+}
