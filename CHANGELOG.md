@@ -30,9 +30,9 @@ _2026-08-17_
 
 ### Summary
 
-Added WooCommerce to the environment so every future agent starts with a working
-store, stocked from a versioned product CSV. Plugin work that touches products,
-orders, or the cart can now be built and checked without any store setup first.
+Added WooCommerce and the official OpenAI provider to the environment. Every
+future agent starts with a stocked store and an OpenAI connector ready for a
+runtime credential, so commerce and AI plugin work need no stack setup first.
 
 ### Added
 
@@ -45,6 +45,9 @@ orders, or the cart can now be built and checked without any store setup first.
 - `install_woocommerce` and `seed_products` in `.cursor/lib.sh` — install and
   activate WooCommerce, configure the store for development, and seed the
   catalogue when the store is empty.
+- `install_ai_provider` — installs and activates **AI Provider for OpenAI**,
+  which registers `openai` with WordPress 7's bundled PHP AI Client and exposes
+  its credential under Settings → Connectors.
 
 ### Changed
 
@@ -52,6 +55,12 @@ orders, or the cart can now be built and checked without any store setup first.
 - `bin/wp-reset.sh` rebuilds the store as well as the site. The reset drops
   WooCommerce's tables, settings, pages, and products along with everything else,
   so it would otherwise have left an empty store behind.
+- WordPress core is downloaded as a ZIP and verified against its official
+  checksums. A bad core tree is replaced exactly while preserving `wp-content`
+  and `wp-config.php`.
+- `start_apache` passes `OPENAI_API_KEY` from the agent environment into mod_php
+  without writing the value to disk. It restarts Apache when the key is added,
+  changed, or removed, tracking only a one-way fingerprint under `/run`.
 
 ### Verification
 
@@ -69,6 +78,12 @@ orders, or the cart can now be built and checked without any store setup first.
 | `bin/wp-reset.sh --yes` | Site and store rebuilt, 9 products re-imported |
 | Install idempotence | Second run reports "Store already has 9 products" and changes nothing |
 | `bin/test.sh`, `composer lint`, `composer analyse` | Still clean with WooCommerce active |
+| Missing AI Client class repair | Deliberately truncated the class, removed the provider and reset the database; one install repaired core, installed the provider, and rebuilt the store |
+| Core integrity | `wp core verify-checksums` passes with no warnings |
+| OpenAI provider | Plugin 1.0.3 active; provider ID `openai` registered |
+| Runtime key handoff | A non-secret probe produced an authentication object in both WP-CLI and mod_php without persisting the value |
+| Connectors UI | Browser shows OpenAI with an API-key field and a clean “not configured” state |
+| Compatibility | WooCommerce remains active and all nine products still render after provider installation |
 
 ### Notes
 
@@ -96,12 +111,26 @@ orders, or the cart can now be built and checked without any store setup first.
 - `WC_Product_CSV_Importer_Controller::auto_map_columns()` is protected, so the
   script subclasses the controller to reach it. That is deliberate: the
   alternative is maintaining a copy of every column name WooCommerce understands.
+- **The provider uncovered silent core corruption.** WP-CLI downloaded WordPress
+  as a tar archive. The archive format's 100-character filename field truncated
+  16 paths in the bundled PHP AI Client, often removing the `.php` extension.
+  WordPress otherwise worked, but AI Provider for OpenAI fatally missed
+  `ListModelsApiBasedProviderAvailability`. ZIP preserves all names. Core
+  checksums now detect and self-repair both missing full names and stale
+  shortened files.
+- **The OpenAI key is runtime state, not repository state.** Future agents need
+  a Cursor Cloud secret named `OPENAI_API_KEY`. Ubuntu's SysV Apache wrapper
+  strips arbitrary variables even when `sudo` preserves them, so keyed starts
+  use `apache2ctl` directly with `PassEnv`. The value is never written to the
+  repository, Apache configuration, WordPress database, logs, or snapshots.
 
 ### Commits
 
 | Commit | Subject |
 | --- | --- |
 | `e2a0ec0` | Install WooCommerce and seed the sample catalogue |
+| `1f15c06` | Install the OpenAI AI provider by default |
+| _this entry_ | Document the OpenAI provider, credential setup, and verification |
 
 ---
 

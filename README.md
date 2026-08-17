@@ -13,6 +13,7 @@ and verify a plugin end to end.
 | Admin | <http://localhost:8080/wp-admin> — `admin` / `admin`, local-only throwaway credentials |
 | WordPress | Latest release, installed at `/var/www/wordpress` with `WP_DEBUG` and pretty permalinks on |
 | Store | WooCommerce, configured for development and stocked with the nine sample products in `data/sample-products.csv` |
+| AI | The official AI Provider for OpenAI, registered with WordPress 7's Connectors system |
 | Stack | Apache 2.4 + PHP 8.3 (mod_php) + MariaDB 10.11 |
 | Tools | WP-CLI, Composer, PHPUnit + WordPress test suite, PHPCS + WordPress Coding Standards, PHPStan, Query Monitor |
 
@@ -112,6 +113,29 @@ is a property of the data rather than the setup: Blouse has no price, and Sweate
 and Socks are variable products whose variation rows the file does not include, so
 the shop shows "Read more" instead of "Add to cart" for them.
 
+## OpenAI provider
+
+The official **AI Provider for OpenAI** plugin is installed and active. WordPress
+7 exposes it under **Settings → Connectors**, and plugins can use the bundled PHP
+AI Client without shipping their own OpenAI integration.
+
+To make it usable in every agent, add an environment secret named
+`OPENAI_API_KEY` in Cursor Cloud. The start script passes it to WP-CLI and Apache
+at runtime without putting the value in the repository, Apache configuration, or
+WordPress database. Restarting the environment after adding, changing, or removing
+the secret refreshes Apache's copy automatically.
+
+For a temporary one-VM setup, the key can instead be entered under Settings →
+Connectors → OpenAI. That stores it in this development site's database, so it
+does not survive a fresh environment or `bin/wp-reset.sh`.
+
+You can check registration without exposing the key:
+
+```bash
+wp plugin status ai-provider-for-openai
+wp eval '$r = WordPress\AiClient\AiClient::defaultRegistry(); echo $r->hasProvider("openai") ? "registered\n" : "missing\n";'
+```
+
 ## Writing a plugin
 
 `plugins/hello-cursor` is the reference: a plugin header and constants in the main
@@ -140,7 +164,7 @@ and dispatch REST requests without touching the development site.
 
 `.cursor/environment.json` wires up three phases:
 
-- **install** (`.cursor/install.sh`) runs once when the environment image is built: it installs packages, creates the databases, installs WordPress and the test suite, and runs `composer install`. It is idempotent, so it is also safe to run by hand after changing it.
+- **install** (`.cursor/install.sh`) runs once when the environment image is built: it installs packages, creates the databases, installs WordPress, WooCommerce, the OpenAI provider and the test suite, and runs `composer install`. It is idempotent, so it is also safe to run by hand after changing it.
 - **start** (`.cursor/start.sh`) runs on every boot: it starts MariaDB and Apache and re-creates the `wp-content` symlinks for the plugins in the checked-out revision.
 - **terminals** tail the WordPress and Apache logs.
 
@@ -148,4 +172,5 @@ To change the stack, edit `.cursor/install.sh`, run it, and confirm the site and
 `composer check` still work. New agents pick the change up from the committed file.
 
 The database uses MariaDB's unix socket authentication and the site's admin
-password is a local placeholder, so this repository contains no credentials.
+password is a local placeholder. API credentials belong in Cursor Cloud
+environment secrets, so this repository contains no credentials.
