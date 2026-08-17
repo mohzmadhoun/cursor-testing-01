@@ -159,7 +159,11 @@ configure_apache() {
 	sudo a2enconf servername >/dev/null
 	sudo a2dissite 000-default >/dev/null 2>&1 || true
 	sudo a2ensite wordpress >/dev/null
-	sudo apache2ctl configtest
+	if [ -n "${OPENAI_API_KEY:-}" ]; then
+		sudo --preserve-env=OPENAI_API_KEY apache2ctl configtest
+	else
+		sudo apache2ctl configtest
+	fi
 }
 
 configure_database() {
