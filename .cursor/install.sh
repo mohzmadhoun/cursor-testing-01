@@ -11,6 +11,14 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 PHP_VERSION="${PHP_VERSION:-8.3}"
 WP_CLI_VERSION="${WP_CLI_VERSION:-2.12.0}"
 
+# Keep a copy of the output. Whether the platform preserves the setup log for a
+# given run varies, and a failed install is the hardest thing to diagnose after
+# the fact. Redirecting here rather than piping the whole script keeps the exit
+# code of the install itself.
+INSTALL_LOG="${INSTALL_LOG:-/tmp/wordpress-install.log}"
+exec > >(tee -a "$INSTALL_LOG") 2>&1
+printf '\n=== %s: %s ===\n' "$(date -u '+%Y-%m-%d %H:%M:%SZ')" "$0"
+
 # The database account is authenticated by MariaDB's unix_socket plugin, which
 # matches the connecting OS user against the account name. Apache, WP-CLI and
 # PHPUnit therefore all have to run as the same non-root user that installs the

@@ -97,6 +97,7 @@ and dispatch REST requests without touching the development site.
 - The **apache-log** terminal tails the Apache access and error logs.
 - Query Monitor is active: it reports queries, hooks and PHP issues in the admin bar.
 - Xdebug is installed but idle, so requests stay fast. Enable it per command, for example `php -d xdebug.mode=coverage vendor/bin/phpunit`.
+- `.cursor/install.sh` keeps a copy of its own output in `/tmp/wordpress-install.log`, which is where to look if the stack did not come up.
 
 ## How the environment is defined
 
