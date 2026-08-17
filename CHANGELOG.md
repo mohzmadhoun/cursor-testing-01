@@ -20,7 +20,8 @@ subsections that apply and drop the ones that do not:
 
 Write for someone returning to this repository months from now with no memory of
 the session. Prefer a sentence that explains a decision over a bullet that only
-restates the diff.
+restates the diff. Use `_this entry_` for the changelog-only commit itself because
+its hash cannot be known before the entry is committed.
 
 ---
 
@@ -81,8 +82,9 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | Missing AI Client class repair | Deliberately truncated the class, removed the provider and reset the database; one install repaired core, installed the provider, and rebuilt the store |
 | Core integrity | `wp core verify-checksums` passes with no warnings |
 | OpenAI provider | Plugin 1.0.3 active; provider ID `openai` registered |
-| Runtime key handoff | A non-secret probe produced an authentication object in both WP-CLI and mod_php without persisting the value |
-| Connectors UI | Browser shows OpenAI with an API-key field and a clean “not configured” state |
+| Runtime key handoff | Environment secret produced authentication in WP-CLI and mod_php; no key value in database, repository, Apache config, or install logs |
+| OpenAI API | Provider validation reports the credential valid and OpenAI reachable |
+| Connectors UI | Browser shows “Connected”, a masked key, and “configured using an environment variable” |
 | Compatibility | WooCommerce remains active and all nine products still render after provider installation |
 
 ### Notes
@@ -130,6 +132,7 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | --- | --- |
 | `e2a0ec0` | Install WooCommerce and seed the sample catalogue |
 | `1f15c06` | Install the OpenAI AI provider by default |
+| `285ac64` | Preserve the OpenAI environment during Apache config checks |
 | _this entry_ | Document the OpenAI provider, credential setup, and verification |
 
 ---
