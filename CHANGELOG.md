@@ -101,7 +101,7 @@ orders, or the cart can now be built and checked without any store setup first.
 
 | Commit | Subject |
 | --- | --- |
-| `7cf2e5e` | Install WooCommerce and seed the sample catalogue |
+| `e2a0ec0` | Install WooCommerce and seed the sample catalogue |
 
 ---
 
