@@ -176,13 +176,70 @@ configure_database() {
 	mariadb -e "SELECT 1" "$DB_NAME" >/dev/null
 }
 
+# Installs core from the .zip rather than letting WP-CLI use the .tar.gz.
+# WordPress ships files whose paths exceed the 100 characters a USTAR tar header
+# can hold, and extracting the tarball truncates those names, `.php` extension
+# and all. Core then looks complete while a handful of classes can never be
+# autoloaded: the bundled PHP AI Client loses
+# ListModelsApiBasedProviderAvailability, so any AI provider plugin fatals.
+download_wordpress_core() {
+	local version="${1:-latest}"
+	local url tmp
+	if [ "$version" = 'latest' ]; then
+		url='https://wordpress.org/latest.zip'
+	else
+		url="https://wordpress.org/wordpress-${version}.zip"
+	fi
+
+	tmp="$(mktemp -d)"
+	curl -fsSL -o "${tmp}/wordpress.zip" "$url"
+	unzip -q -o "${tmp}/wordpress.zip" -d "$tmp"
+
+	# Replace the two core trees exactly. `--delete` removes any stale or
+	# truncated names left by an earlier tar extraction, while wp-content and
+	# wp-config.php remain untouched on a repair.
+	mkdir -p "${WP_DIR}/wp-admin" "${WP_DIR}/wp-includes" "${WP_DIR}/wp-content"
+	rsync -a --delete "${tmp}/wordpress/wp-admin/" "${WP_DIR}/wp-admin/"
+	rsync -a --delete "${tmp}/wordpress/wp-includes/" "${WP_DIR}/wp-includes/"
+	cp -a "${tmp}/wordpress/wp-content/." "${WP_DIR}/wp-content/"
+
+	local core_file
+	for core_file in "${tmp}/wordpress"/*; do
+		[ -f "$core_file" ] || continue
+		cp -a "$core_file" "${WP_DIR}/"
+	done
+	rm -rf "$tmp"
+}
+
+verify_wordpress_core() {
+	# Core's own manifest is the only cheap way to notice a partial extraction;
+	# a truncated file is reported as missing, while its shortened counterpart
+	# is reported as an unexpected file. WP-CLI exits zero for the latter, so
+	# inspect the output as well as the status.
+	local verification
+	verification="$(mktemp)"
+	if wp_cli core verify-checksums >"$verification" 2>&1 &&
+		! grep -q '^Warning:' "$verification"; then
+		rm -f "$verification"
+		return 0
+	fi
+	rm -f "$verification"
+
+	warn "Core files failed verification; re-extracting $(wp_cli core version)"
+	download_wordpress_core "$(wp_cli core version)"
+
+	if ! wp_cli core verify-checksums 2>&1 | tail -5; then
+		warn "Core still does not match its checksums"
+	fi
+}
+
 install_wordpress() {
 	sudo mkdir -p "$WP_DIR"
 	sudo chown -R "$(id -un):$(id -gn)" "$WP_DIR"
 
 	if [ ! -f "${WP_DIR}/wp-load.php" ]; then
 		log "Downloading WordPress core"
-		wp_cli core download
+		download_wordpress_core "${WP_VERSION:-latest}"
 	else
 		log "WordPress core present ($(wp_cli core version))"
 	fi
@@ -251,6 +308,7 @@ install_wordpress() {
 	fi
 
 	ensure_htaccess
+	verify_wordpress_core
 
 	# Query Monitor surfaces PHP notices, slow queries and hook usage in the
 	# admin bar, which is the fastest way for an agent to see what a plugin did.
@@ -361,6 +419,7 @@ main() {
 	configure_apache
 	configure_database
 	install_wordpress
+	install_ai_provider
 	install_woocommerce
 	link_repo_content
 	install_test_suite

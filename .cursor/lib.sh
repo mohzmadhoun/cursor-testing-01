@@ -56,10 +56,40 @@ apache_is_up() {
 	curl -fsS -o /dev/null --max-time 5 "http://127.0.0.1:${SITE_PORT}/" 2>/dev/null
 }
 
+configure_openai_apache_env() {
+	local conf='/etc/apache2/conf-available/openai-key-env.conf'
+	if [ -n "${OPENAI_API_KEY:-}" ]; then
+		# Only the variable name is written to disk. Apache inherits the actual
+		# value from start.sh's environment and passes it to mod_php.
+		echo 'PassEnv OPENAI_API_KEY' | sudo tee "$conf" >/dev/null
+		sudo a2enconf openai-key-env >/dev/null
+	else
+		sudo a2disconf openai-key-env >/dev/null 2>&1 || true
+		sudo rm -f "$conf"
+	fi
+}
+
 start_apache() {
+	local env_marker='/run/wordpress-openai-key.fingerprint'
+	local env_fingerprint='none'
+	if [ -n "${OPENAI_API_KEY:-}" ]; then
+		env_fingerprint="$(printf '%s' "$OPENAI_API_KEY" | sha256sum | awk '{print $1}')"
+	fi
+
+	configure_openai_apache_env
+
 	if apache_is_up; then
-		log "Apache is already serving port ${SITE_PORT}"
-		return 0
+		if [ -f "$env_marker" ] && [ "$(cat "$env_marker")" = "$env_fingerprint" ]; then
+			log "Apache is already serving port ${SITE_PORT}"
+			return 0
+		fi
+
+		# Secrets are per-agent runtime state. Restart when the key was added,
+		# changed or removed so Apache never keeps credentials from an earlier
+		# environment. The marker contains only a one-way fingerprint.
+		log "Restarting Apache to refresh the OpenAI environment"
+		sudo apache2ctl stop >/dev/null 2>&1 || sudo pkill -x apache2 || true
+		sleep 2
 	fi
 
 	log "Starting Apache on port ${SITE_PORT}"
@@ -76,9 +106,16 @@ start_apache() {
 		sleep 2
 	fi
 
-	sudo service apache2 start >/dev/null 2>&1 || true
+	if [ -n "${OPENAI_API_KEY:-}" ]; then
+		# Ubuntu's SysV service wrapper strips arbitrary variables even when
+		# sudo preserves them. apache2ctl does not.
+		sudo --preserve-env=OPENAI_API_KEY apache2ctl start >/dev/null 2>&1 || true
+	else
+		sudo service apache2 start >/dev/null 2>&1 || true
+	fi
 	for _ in $(seq 1 20); do
 		if apache_is_up; then
+			echo "$env_fingerprint" | sudo tee "$env_marker" >/dev/null
 			return 0
 		fi
 		sleep 1
@@ -125,6 +162,20 @@ store_option() {
 	local name="$1"
 	shift
 	wp_cli option update "$name" "$@" >/dev/null 2>&1 || warn "Could not set ${name}"
+}
+
+install_ai_provider() {
+	local slug='ai-provider-for-openai'
+	if ! wp_cli plugin is-installed "$slug" 2>/dev/null; then
+		log "Installing AI Provider for OpenAI"
+		if ! wp_cli plugin install "$slug"; then
+			warn "Could not install AI Provider for OpenAI (offline?)"
+			return 0
+		fi
+	fi
+
+	wp_cli plugin activate "$slug" >/dev/null 2>&1 ||
+		warn "Could not activate AI Provider for OpenAI"
 }
 
 # Installs WooCommerce, configures it for development, and seeds the sample
