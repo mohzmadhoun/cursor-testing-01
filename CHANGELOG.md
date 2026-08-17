@@ -86,6 +86,8 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | OpenAI API | Provider validation reports the credential valid and OpenAI reachable |
 | Connectors UI | Browser shows “Connected”, a masked key, and “configured using an environment variable” |
 | Compatibility | WooCommerce remains active and all nine products still render after provider installation |
+| Environment build | `bld-20260817-d4a574ce-c290-4612-89f3-b8471ec319d1` succeeded |
+| Fresh agent from exact build | Automatic start exited 0; locks recreated; site/store HTTP 200; 9 products; plugins active; checksums and `composer check` pass; logs clean |
 
 ### Notes
 
@@ -135,6 +137,14 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 - The persistent install log contains only the latest run. Appending preserved
   resolved warnings in a successful snapshot and made a fresh agent correctly
   flag historical failures as current health problems.
+- Branch-specific environment builds can be tested but cannot become active.
+  The final build passed, but Cursor will only promote a build made from the
+  repository's default branch. Merge PR #1, then build the default branch.
+- A draft-build agent does not inherit a newly supplied, unsaved environment
+  secret. The exact-build agent proved all code and runtime behavior but correctly
+  reported no `OPENAI_API_KEY`; the current agent proved the supplied key valid
+  end to end. Saving the proposed environment is the step that makes the secret
+  available to ordinary future agents.
 
 ### Commits
 
