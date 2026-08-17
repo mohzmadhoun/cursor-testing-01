@@ -11,6 +11,22 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 PHP_VERSION="${PHP_VERSION:-8.3}"
 WP_CLI_VERSION="${WP_CLI_VERSION:-2.12.0}"
 
+# The database account is authenticated by MariaDB's unix_socket plugin, which
+# matches the connecting OS user against the account name. Apache, WP-CLI and
+# PHPUnit therefore all have to run as the same non-root user that installs the
+# site, which is why .cursor/environment.json pins `"user": "ubuntu"`.
+if [ "$(id -u)" -eq 0 ]; then
+	cat >&2 <<-EOF
+		This script must not run as root: the site's database account is tied to the
+		OS user through unix socket authentication, so root would install a site that
+		the agent's own user cannot connect to.
+
+		Set "user" in .cursor/environment.json to a non-root user, or run
+		  sudo -u ubuntu ./.cursor/install.sh
+	EOF
+	exit 1
+fi
+
 APT_PACKAGES=(
 	apache2
 	"libapache2-mod-php${PHP_VERSION}"
