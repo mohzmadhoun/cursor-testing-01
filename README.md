@@ -12,6 +12,7 @@ and verify a plugin end to end.
 | Site | <http://localhost:8080> (port 8080 is forwarded, so it is also reachable from the agent's browser preview) |
 | Admin | <http://localhost:8080/wp-admin> — `admin` / `admin`, local-only throwaway credentials |
 | WordPress | Latest release, installed at `/var/www/wordpress` with `WP_DEBUG` and pretty permalinks on |
+| Store | WooCommerce, configured for development and stocked with the nine sample products in `data/sample-products.csv` |
 | Stack | Apache 2.4 + PHP 8.3 (mod_php) + MariaDB 10.11 |
 | Tools | WP-CLI, Composer, PHPUnit + WordPress test suite, PHPCS + WordPress Coding Standards, PHPStan, Query Monitor |
 
@@ -24,12 +25,14 @@ branch switches. Only your own code is versioned: everything in `plugins/` (and
 ```
 CHANGELOG.md               Running record of the work done, one entry per pull request
 .cursor/environment.json   Cloud Agent environment definition
-.cursor/install.sh         Builds the stack: packages, database, WordPress, test suite
+.cursor/install.sh         Builds the stack: packages, database, WordPress, WooCommerce, test suite
 .cursor/start.sh           Per-boot startup: MariaDB, Apache, plugin symlinks
 plugins/hello-cursor/      Reference plugin: settings page, shortcode, REST route, tests
+data/sample-products.csv   Sample catalogue, imported into WooCommerce on first install
 bin/new-plugin.sh          Scaffolds a new plugin
 bin/test.sh                Runs the PHPUnit suites
-bin/wp-reset.sh            Rebuilds the site from scratch
+bin/import-products.php    Imports a WooCommerce product CSV
+bin/wp-reset.sh            Rebuilds the site and the store from scratch
 phpcs.xml.dist             WordPress coding standards ruleset
 phpstan.neon.dist          Static analysis configuration
 wp-cli.yml                 Points `wp` at the site, so no --path is needed
@@ -76,6 +79,38 @@ wp post create --post_type=page --post_title=Demo --post_status=publish --post_c
 wp eval 'var_dump( get_option( "hello_cursor_settings" ) );'
 wp db query 'SELECT option_name FROM wp_options LIMIT 5;'
 ```
+
+## The WooCommerce store
+
+WooCommerce is installed and active, and the store is set up so nothing blocks
+development: "coming soon" mode is off, the onboarding wizard and setup task list
+are suppressed, tracking is off, and cash on delivery is enabled so orders can be
+placed without a payment gateway.
+
+The nine products in `data/sample-products.csv` are imported on first install, with
+their categories, images and attributes:
+
+```bash
+wp wc product list --user=admin --fields=id,name,sku,price
+open http://localhost:8080/shop/
+```
+
+To change the catalogue, edit the CSV and re-import it. The import only runs
+automatically when the store has no products, so seed it again explicitly:
+
+```bash
+wp eval-file bin/import-products.php data/sample-products.csv --user=admin
+```
+
+`--user` is not optional: WooCommerce checks `manage_product_terms` before
+creating product categories and drops them silently without it. The importer is
+WooCommerce's own, so the file follows the format of the Products → Import screen
+and anything that screen accepts works here.
+
+Three of the sample products come from the CSV without a purchasable price, which
+is a property of the data rather than the setup: Blouse has no price, and Sweater
+and Socks are variable products whose variation rows the file does not include, so
+the shop shows "Read more" instead of "Add to cart" for them.
 
 ## Writing a plugin
 

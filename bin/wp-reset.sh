@@ -40,6 +40,10 @@ wp_cli rewrite structure '/%postname%/'
 wp_cli option update timezone_string 'UTC'
 ensure_htaccess
 
+# The reset dropped WooCommerce's tables, settings, pages and products along with
+# everything else, so rebuild the store too.
+install_woocommerce
+
 link_repo_content
 
 log "Activating plugins from the repository"

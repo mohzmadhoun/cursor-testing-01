@@ -24,6 +24,87 @@ restates the diff.
 
 ---
 
+## PR #1 — WordPress plugin development environment for Cloud Agents (continued)
+
+_2026-08-17_
+
+### Summary
+
+Added WooCommerce to the environment so every future agent starts with a working
+store, stocked from a versioned product CSV. Plugin work that touches products,
+orders, or the cart can now be built and checked without any store setup first.
+
+### Added
+
+- `data/sample-products.csv` — nine sample fashion products in WooCommerce's own
+  product CSV format, kept in the repository so the catalogue is reproducible.
+- `bin/import-products.php` — imports a product CSV through WooCommerce's own
+  importer, so category hierarchies, attributes, stock, dimensions and remote
+  images are handled exactly as the Products → Import screen handles them. Run it
+  with `wp eval-file bin/import-products.php <csv> --user=admin`.
+- `install_woocommerce` and `seed_products` in `.cursor/lib.sh` — install and
+  activate WooCommerce, configure the store for development, and seed the
+  catalogue when the store is empty.
+
+### Changed
+
+- `.cursor/install.sh` provisions the store as part of the normal install.
+- `bin/wp-reset.sh` rebuilds the store as well as the site. The reset drops
+  WooCommerce's tables, settings, pages, and products along with everything else,
+  so it would otherwise have left an empty store behind.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| Clean database, full install | Site and store built in about 15 seconds, no warnings |
+| Products imported | 9 created, 0 failed, 0 skipped |
+| Categories | `Clothing` with `Shirts` (4), `Accessories` (3), `Jackets` (1), `Sweater` (1) |
+| Images | All 9 products have a featured image; Sweater also has its gallery image |
+| Shop page | "Showing all 9 results" with prices and sale badges |
+| Product page | Image, price, SKU, and a `Clothing / Jackets` breadcrumb |
+| Cart and checkout in a browser | Jacket added, cart subtotal $25.00, checkout renders with cash on delivery available |
+| Admin products screen | All 9 listed with thumbnails, SKUs, prices, categories |
+| Onboarding suppressed | No coming-soon banner, wizard, task list, or setup widget |
+| `bin/wp-reset.sh --yes` | Site and store rebuilt, 9 products re-imported |
+| Install idempotence | Second run reports "Store already has 9 products" and changes nothing |
+| `bin/test.sh`, `composer lint`, `composer analyse` | Still clean with WooCommerce active |
+
+### Notes
+
+- **The importer needs a user.** WooCommerce checks `manage_product_terms` before
+  creating product categories and, without a user, drops every category without
+  raising an error — the first import produced nine products all in
+  "Uncategorized". `bin/import-products.php` now refuses to run unless the current
+  user has the capability, rather than leaving that to be rediscovered.
+- **`update_existing` means update-only.** Passing it made the importer skip all
+  nine rows with "No matching product exists to update". Seeding wants create
+  mode; SKUs are unique, so re-running cannot duplicate products.
+- **"Coming soon" mode hides the whole store.** New WooCommerce installs enable
+  it, which replaced every store page with a launch placeholder while returning
+  HTTP 200 — the shop looked fine to a status-code check and was empty to a
+  reader.
+- **Hiding the setup task list takes the right option.** The dashboard's
+  "WooCommerce Setup" widget consults `woocommerce_task_list_hidden_lists`;
+  `woocommerce_admin_task_list_hidden` alone left it on screen. WooCommerce
+  renames these over time, so each store option is written tolerantly and a
+  rejected write warns instead of aborting the install.
+- **Three products are not purchasable, by data rather than by fault.** Blouse
+  carries no price in the CSV, and Sweater and Socks are variable products whose
+  variation rows the file does not contain, so the shop shows "Read more" for
+  them. Left faithful to the supplied file rather than invented.
+- `WC_Product_CSV_Importer_Controller::auto_map_columns()` is protected, so the
+  script subclasses the controller to reach it. That is deliberate: the
+  alternative is maintaining a copy of every column name WooCommerce understands.
+
+### Commits
+
+| Commit | Subject |
+| --- | --- |
+| `7cf2e5e` | Install WooCommerce and seed the sample catalogue |
+
+---
+
 ## PR #1 — WordPress plugin development environment for Cloud Agents
 
 _2026-08-17_

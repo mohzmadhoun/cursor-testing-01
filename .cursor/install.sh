@@ -361,6 +361,7 @@ main() {
 	configure_apache
 	configure_database
 	install_wordpress
+	install_woocommerce
 	link_repo_content
 	install_test_suite
 	install_composer_dependencies

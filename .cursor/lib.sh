@@ -121,6 +121,80 @@ link_repo_content() {
 	done
 }
 
+store_option() {
+	local name="$1"
+	shift
+	wp_cli option update "$name" "$@" >/dev/null 2>&1 || warn "Could not set ${name}"
+}
+
+# Installs WooCommerce, configures it for development, and seeds the sample
+# catalogue. Used by install.sh and again by bin/wp-reset.sh, which drops the
+# database and so has to rebuild the store as well as the site.
+install_woocommerce() {
+	if ! wp_cli plugin is-installed woocommerce 2>/dev/null; then
+		log "Installing WooCommerce"
+		if ! wp_cli plugin install woocommerce; then
+			warn "Could not install WooCommerce (offline?); skipping the store setup"
+			return 0
+		fi
+	fi
+
+	wp_cli plugin activate woocommerce >/dev/null 2>&1 || true
+
+	log "Configuring the store"
+	# Enough of a store profile that no screen asks for it, and no onboarding
+	# wizard or marketplace suggestion gets between an agent and the store.
+	# WooCommerce renames, redirects and retires these option names as it
+	# evolves, so a single rejected write must not abort the install.
+	#
+	# "Coming soon" is the one that matters most: new installs enable it, and it
+	# replaces the entire store front with a launch placeholder.
+	store_option woocommerce_coming_soon 'no'
+	store_option woocommerce_store_address '123 Example Street'
+	store_option woocommerce_store_city 'Amsterdam'
+	store_option woocommerce_store_postcode '1011AB'
+	store_option woocommerce_default_country 'NL'
+	store_option woocommerce_currency 'USD'
+	store_option woocommerce_allow_tracking 'no'
+	store_option woocommerce_show_marketplace_suggestions 'no'
+	store_option woocommerce_admin_task_list_hidden 'yes'
+	store_option woocommerce_task_list_welcome_modal_dismissed 'yes'
+	# The one the "WooCommerce Setup" dashboard widget and the reminder bar
+	# actually consult; the option above no longer hides them on its own.
+	store_option woocommerce_task_list_hidden_lists '["setup","extended"]' --format=json
+	store_option woocommerce_task_list_reminder_bar_hidden 'yes'
+	store_option woocommerce_onboarding_profile '{"skipped":true,"completed":true}' --format=json
+	# Let orders be placed without a payment gateway or shipping account.
+	store_option woocommerce_cod_settings '{"enabled":"yes","title":"Cash on delivery"}' --format=json
+
+	# Shop, cart, checkout and my-account pages. Activation normally creates
+	# them, but running the tool is idempotent and covers a partial install.
+	wp_cli wc tool run install_pages --user="$WP_ADMIN_USER" >/dev/null 2>&1 ||
+		warn "Could not run the WooCommerce install_pages tool"
+
+	seed_products
+}
+
+seed_products() {
+	local csv="${REPO_DIR}/data/sample-products.csv"
+	[ -f "$csv" ] || return 0
+
+	local count
+	count="$(wp_cli post list --post_type=product --post_status=any --format=count)"
+	if [ "$count" -gt 0 ]; then
+		log "Store already has ${count} products"
+		return 0
+	fi
+
+	log "Importing sample products"
+	# --user matters: WooCommerce silently drops every product category when the
+	# importer runs without a user who can `manage_product_terms`. Product images
+	# are downloaded from woocommerce.com, so this needs network access too; the
+	# products themselves still import if an image cannot be fetched.
+	wp_cli eval-file "${REPO_DIR}/bin/import-products.php" "$csv" --user="$WP_ADMIN_USER" ||
+		warn "Product import did not complete"
+}
+
 # WP-CLI runs under the CLI SAPI, so WordPress does not detect Apache and never
 # writes the rewrite block itself. Without it, pretty permalinks and /wp-json/
 # both return 404.
