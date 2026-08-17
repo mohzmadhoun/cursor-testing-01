@@ -1,0 +1,14 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 5
+	paths:
+		- plugins
+	bootstrapFiles:
+		- bin/phpstan-bootstrap.php
+	excludePaths:
+		analyseAndScan:
+			- plugins/*/tests/*
+			- plugins/*/vendor/*
+			- plugins/*/node_modules/*

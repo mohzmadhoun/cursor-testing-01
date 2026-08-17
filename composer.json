@@ -1,0 +1,43 @@
+{
+    "name": "cursor/wordpress-plugin-workspace",
+    "description": "WordPress plugin development workspace with coding standards, static analysis and integration tests.",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^9.6",
+        "squizlabs/php_codesniffer": "^3.13",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "wp-coding-standards/wpcs": "^3.3",
+        "yoast/phpunit-polyfills": "^1.1"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "lint:fix": "phpcbf",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "test": "bin/test.sh",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "lint": "Check the plugins against the WordPress coding standards.",
+        "lint:fix": "Fix the coding standard violations that can be fixed automatically.",
+        "analyse": "Run PHPStan static analysis with WordPress stubs.",
+        "test": "Run the PHPUnit integration tests of every plugin.",
+        "check": "Run lint, static analysis and tests."
+    }
+}

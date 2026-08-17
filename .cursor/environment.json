@@ -1,0 +1,24 @@
+{
+  "name": "WordPress plugin development",
+  "user": "ubuntu",
+  "install": "./.cursor/install.sh",
+  "start": "./.cursor/start.sh",
+  "terminals": [
+    {
+      "name": "wp-debug-log",
+      "command": "touch /var/www/wordpress/wp-content/debug.log && tail -n 50 -F /var/www/wordpress/wp-content/debug.log",
+      "description": "PHP notices, warnings and errors raised by WordPress and the plugins in plugins/ (WP_DEBUG_LOG)."
+    },
+    {
+      "name": "apache-log",
+      "command": "sudo tail -n 50 -F /var/log/apache2/error.log /var/log/apache2/access.log",
+      "description": "Apache request and error log for http://localhost:8080."
+    }
+  ],
+  "ports": [
+    {
+      "name": "WordPress site",
+      "port": 8080
+    }
+  ]
+}
