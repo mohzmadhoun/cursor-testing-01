@@ -126,10 +126,10 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
   use `apache2ctl` directly with `PassEnv`. The value is never written to the
   repository, Apache configuration, WordPress database, logs, or snapshots.
 - **Snapshot boots lose `/run`.** `/var/lock` points into that volatile tree, so
-  the first successful environment build reached `a2enmod` without
-  `/var/lock/apache2` and failed before installation. Apache configuration now
-  recreates the directory with Debian's expected `www-data:root` ownership and
-  mode before invoking package helpers.
+  environment builds first lacked `/var/lock/apache2`, then proved the
+  `/run/lock` parent itself is absent. Apache configuration now recreates the
+  sticky parent and the package directory with Debian's expected ownership and
+  modes before invoking package helpers.
 
 ### Commits
 
@@ -139,6 +139,7 @@ runtime credential, so commerce and AI plugin work need no stack setup first.
 | `1f15c06` | Install the OpenAI AI provider by default |
 | `285ac64` | Preserve the OpenAI environment during Apache config checks |
 | `8a62b41` | Recreate Apache lock state after snapshot boot |
+| `259ead8` | Recreate the volatile lock parent after snapshot boot |
 | _this entry_ | Document the OpenAI provider, credential setup, and verification |
 
 ---
