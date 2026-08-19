@@ -149,6 +149,18 @@ if ( ! function_exists( 'wc_price' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_placeholder_img_src' ) ) {
+	/**
+	 * Placeholder image URL.
+	 *
+	 * @param string $size Image size.
+	 */
+	function wc_placeholder_img_src( $size = 'woocommerce_thumbnail' ) {
+		unset( $size );
+		return '';
+	}
+}
+
 if ( ! function_exists( 'get_woocommerce_currency' ) ) {
 	/**
 	 * Store currency code.

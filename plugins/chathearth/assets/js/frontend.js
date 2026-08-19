@@ -81,6 +81,20 @@
                 '">' +
                 escapeHtml(cfg.i18n.clear) +
                 "</button>" +
+                '<button type="button" class="chathearth-expand" aria-label="' +
+                escapeAttr((cfg.i18n && cfg.i18n.expand) || "Double chat size") +
+                '" title="' +
+                escapeAttr((cfg.i18n && cfg.i18n.expand) || "Double chat size") +
+                '">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+                "</button>" +
+                '<button type="button" class="chathearth-restore" hidden aria-label="' +
+                escapeAttr((cfg.i18n && cfg.i18n.restore) || "Restore chat size") +
+                '" title="' +
+                escapeAttr((cfg.i18n && cfg.i18n.restore) || "Restore chat size") +
+                '">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+                "</button>" +
                 '<button type="button" class="chathearth-close" aria-label="' +
                 escapeAttr(cfg.i18n.close) +
                 '">&times;</button>' +
@@ -123,6 +137,18 @@
             root.querySelector(".chathearth-clear").addEventListener(
                 "click",
                 clearChat,
+            );
+            root.querySelector(".chathearth-expand").addEventListener(
+                "click",
+                function () {
+                    setExpanded(true);
+                },
+            );
+            root.querySelector(".chathearth-restore").addEventListener(
+                "click",
+                function () {
+                    setExpanded(false);
+                },
             );
             root.querySelector(".chathearth-composer").addEventListener(
                 "submit",
@@ -256,11 +282,24 @@
 
         function closePanel() {
             isOpen = false;
+            setExpanded(false);
             root.querySelector(".chathearth-panel").classList.remove("is-open");
             root.querySelector(".chathearth-launcher").setAttribute(
                 "aria-expanded",
                 "false",
             );
+        }
+
+        function setExpanded(on) {
+            root.classList.toggle("is-expanded", !!on);
+            var expandBtn = root.querySelector(".chathearth-expand");
+            var restoreBtn = root.querySelector(".chathearth-restore");
+            if (expandBtn) {
+                expandBtn.hidden = !!on;
+            }
+            if (restoreBtn) {
+                restoreBtn.hidden = !on;
+            }
         }
 
         function ensureWelcome() {
@@ -716,33 +755,70 @@
             }
             var wrap = document.createElement("div");
             wrap.className = "chathearth-products";
+            var scroller = document.createElement("div");
+            scroller.className = "chathearth-product-scroller";
             products.forEach(function (product) {
-                var card = document.createElement("div");
+                var card = document.createElement("article");
                 card.className = "chathearth-product";
+                var media = document.createElement(product.url ? "a" : "div");
+                media.className = "chathearth-product-media";
+                if (product.url) {
+                    media.href = product.url;
+                    media.target = "_blank";
+                    media.rel = "noopener noreferrer";
+                }
+                if (product.image) {
+                    var img = document.createElement("img");
+                    img.src = product.image;
+                    img.alt = product.image_alt || product.name || "";
+                    img.loading = "lazy";
+                    media.appendChild(img);
+                } else {
+                    media.className += " is-empty";
+                }
+                card.appendChild(media);
                 var name = document.createElement("a");
+                name.className = "chathearth-product-name";
                 name.href = product.url || "#";
                 name.target = "_blank";
                 name.rel = "noopener noreferrer";
                 name.textContent = product.name || "Product";
                 card.appendChild(name);
+                var priceWrap = document.createElement("div");
+                priceWrap.className = "chathearth-product-price";
+                if (product.regular_price && product.regular_price !== product.price) {
+                    var was = document.createElement("del");
+                    was.className = "chathearth-price-regular";
+                    was.textContent = product.regular_price;
+                    priceWrap.appendChild(was);
+                }
                 if (product.price) {
-                    var price = document.createElement("span");
-                    price.className = "chathearth-product-price";
-                    price.textContent = product.price;
-                    card.appendChild(price);
+                    var now = document.createElement(
+                        product.regular_price && product.regular_price !== product.price
+                            ? "ins"
+                            : "span"
+                    );
+                    now.className = "chathearth-price-current";
+                    now.textContent = product.price;
+                    priceWrap.appendChild(now);
+                }
+                if (priceWrap.childNodes.length) {
+                    card.appendChild(priceWrap);
                 }
                 if (product.purchasable) {
                     var btn = document.createElement("button");
                     btn.type = "button";
-                    btn.className = "chathearth-add-cart";
+                    btn.className =
+                        "chathearth-add-cart wp-block-button__link wp-element-button wc-block-components-product-button__button has-small-font-size has-text-align-center";
                     btn.textContent = (cfg.i18n && cfg.i18n.addToCart) || "Add to cart";
                     btn.addEventListener("click", function () {
                         addToCart(product, btn, wrap);
                     });
                     card.appendChild(btn);
                 }
-                wrap.appendChild(card);
+                scroller.appendChild(card);
             });
+            wrap.appendChild(scroller);
             if (products.length >= 2) {
                 var compare = document.createElement("button");
                 compare.type = "button";

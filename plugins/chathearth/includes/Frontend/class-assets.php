@@ -106,6 +106,8 @@ final class Assets {
 					'sources'           => __( 'Sources', 'chathearth' ),
 					'compareThese'      => __( 'Compare these products', 'chathearth' ),
 					'cartError'         => __( 'Could not add that product to the cart.', 'chathearth' ),
+					'expand'            => __( 'Double chat size', 'chathearth' ),
+					'restore'           => __( 'Restore chat size', 'chathearth' ),
 				),
 				'styles'           => array(
 					'iconShape'            => (string) $settings['icon_shape'],

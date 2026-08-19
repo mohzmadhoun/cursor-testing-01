@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -144,6 +144,11 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.1 =
+* Shop-style product cards in chat (image, current and previous price, Add to cart).
+* Header control to double the chat window, with a restore control when expanded.
+* Horizontal, swipe/scrollable product cards when the panel is too narrow.
+
 = 1.4.0 =
 * Knowledge Base (RAG): markdown export of selected site content, admin include/exclude, incremental reindex.
 * Vector stores: WordPress database, self-hosted Chroma, or Pinecone.
@@ -179,6 +184,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.1 =
+Shop-style product cards in chat and a control to double or restore the chat window size.
 
 = 1.4.0 =
 Adds a Knowledge Base tab (RAG), website-only grounding, and add-to-cart from chat.

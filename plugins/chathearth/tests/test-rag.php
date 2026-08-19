@@ -190,6 +190,7 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$this->assertTrue( Product_Catalog::message_mentions_name( 'Compare Shirt vs Jacket', 'Jacket' ) );
 		$this->assertFalse( Product_Catalog::message_mentions_name( 'I like tshirts', 'Shirt' ) );
 		$this->assertFalse( Product_Catalog::message_mentions_name( 'Hello there', 'Hi' ) );
+		$this->assertNull( ( new Product_Catalog() )->get_public_product( 1 ) );
 	}
 
 	public function test_kb_rest_requires_manage_options() {

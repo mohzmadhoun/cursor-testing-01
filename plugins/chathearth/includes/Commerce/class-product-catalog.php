@@ -48,7 +48,9 @@ final class Product_Catalog {
 
 		$name        = method_exists( $product, 'get_name' ) ? (string) $product->get_name() : get_the_title( $product_id );
 		$url         = (string) get_permalink( $product_id );
-		$price       = $this->public_price( $product );
+		$price       = $this->format_amount( method_exists( $product, 'get_price' ) ? $product->get_price() : '' );
+		$regular     = $this->regular_price_if_on_sale( $product );
+		$media       = $this->public_image( $product_id, $product );
 		$purchasable = method_exists( $product, 'is_purchasable' ) && method_exists( $product, 'is_in_stock' )
 			? ( $product->is_purchasable() && $product->is_in_stock() )
 			: false;
@@ -72,38 +74,103 @@ final class Product_Catalog {
 		}
 
 		return array(
-			'id'          => (int) $product->get_id(),
-			'name'        => $name,
-			'url'         => $url,
-			'price'       => $price,
-			'purchasable' => $purchasable,
-			'in_stock'    => method_exists( $product, 'is_in_stock' ) ? (bool) $product->is_in_stock() : false,
-			'type'        => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
-			'variations'  => $variations,
+			'id'            => (int) $product->get_id(),
+			'name'          => $name,
+			'url'           => $url,
+			'image'         => $media['url'],
+			'image_alt'     => $media['alt'],
+			'price'         => $price,
+			'regular_price' => $regular,
+			'on_sale'       => '' !== $regular,
+			'purchasable'   => $purchasable,
+			'in_stock'      => method_exists( $product, 'is_in_stock' ) ? (bool) $product->is_in_stock() : false,
+			'type'          => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
+			'variations'    => $variations,
 		);
 	}
 
 	/**
-	 * Plain-text current price for chat cards.
+	 * Previous (regular) price when the product is on sale.
 	 *
 	 * @param object $product WooCommerce product.
 	 */
-	private function public_price( $product ): string {
-		if ( method_exists( $product, 'get_price' ) && function_exists( 'wc_price' ) ) {
-			$html = (string) wc_price( $product->get_price() );
-		} elseif ( method_exists( $product, 'get_price_html' ) ) {
-			$html = (string) $product->get_price_html();
-		} else {
+	private function regular_price_if_on_sale( $product ): string {
+		if ( ! method_exists( $product, 'is_on_sale' ) || ! $product->is_on_sale() ) {
+			return '';
+		}
+		if ( ! method_exists( $product, 'get_regular_price' ) ) {
 			return '';
 		}
 
-		$plain     = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
-		$collapsed = preg_replace( '/\s+/', ' ', $plain );
-		if ( ! is_string( $collapsed ) ) {
-			$collapsed = $plain;
+		$regular = $product->get_regular_price();
+		$current = method_exists( $product, 'get_price' ) ? $product->get_price() : '';
+		if ( '' === (string) $regular || (string) $regular === (string) $current ) {
+			return '';
 		}
 
-		return trim( $collapsed );
+		return $this->format_amount( $regular );
+	}
+
+	/**
+	 * Catalog image URL and alt text.
+	 *
+	 * @param int    $product_id Product id.
+	 * @param object $product    WooCommerce product.
+	 * @return array{url:string,alt:string}
+	 */
+	private function public_image( int $product_id, $product ): array {
+		$url = get_the_post_thumbnail_url( $product_id, 'woocommerce_thumbnail' );
+		if ( ! is_string( $url ) || '' === $url ) {
+			$url = get_the_post_thumbnail_url( $product_id, 'medium' );
+		}
+		if ( ( ! is_string( $url ) || '' === $url ) && method_exists( $product, 'get_image_id' ) ) {
+			$image_id = (int) $product->get_image_id();
+			if ( $image_id > 0 ) {
+				$maybe = wp_get_attachment_image_url( $image_id, 'woocommerce_thumbnail' );
+				$url   = is_string( $maybe ) ? $maybe : '';
+			}
+		}
+		if ( ( ! is_string( $url ) || '' === $url ) && function_exists( 'wc_placeholder_img_src' ) ) {
+			$url = (string) wc_placeholder_img_src( 'woocommerce_thumbnail' );
+		}
+
+		$alt      = '';
+		$thumb_id = get_post_thumbnail_id( $product_id );
+		if ( $thumb_id ) {
+			$alt = (string) get_post_meta( (int) $thumb_id, '_wp_attachment_image_alt', true );
+		}
+		if ( '' === $alt ) {
+			$alt = method_exists( $product, 'get_name' ) ? (string) $product->get_name() : '';
+		}
+
+		return array(
+			'url' => is_string( $url ) ? $url : '',
+			'alt' => $alt,
+		);
+	}
+
+	/**
+	 * Plain-text money for chat cards.
+	 *
+	 * @param mixed $amount Raw amount.
+	 */
+	private function format_amount( $amount ): string {
+		if ( ! is_scalar( $amount ) || '' === (string) $amount ) {
+			return '';
+		}
+
+		if ( function_exists( 'wc_price' ) ) {
+			$html      = (string) wc_price( $amount );
+			$plain     = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
+			$collapsed = preg_replace( '/\s+/', ' ', $plain );
+			if ( ! is_string( $collapsed ) ) {
+				$collapsed = $plain;
+			}
+
+			return trim( $collapsed );
+		}
+
+		return (string) $amount;
 	}
 
 	/**
