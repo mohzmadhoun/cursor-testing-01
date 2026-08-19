@@ -50,6 +50,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - Catalog matching attaches product cards from names in the visitor message so comparison and add-to-cart still work when RAG is off or retrieval misses a product document.
 - Comparison questions that name two or more products show those cards instead of every related RAG hit.
 - Chat card prices use `wc_price()` and entity-decoding so visitors see `$18.00` rather than HTML entities.
+- Plugin version **1.4.1**: shop-style product cards (image, current and previous price, Add to cart matching the shop `wp-element-button`), a header control that doubles the chat window with a restore control, and a horizontal scroller when cards do not fit.
 
 ### Verification
 
@@ -68,6 +69,8 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 | Homepage widget | Launcher, `restUrl`/`cartUrl`, Add to cart / Compare these / Sources i18n, `woocommerce` enabled |
 | Browser widget | Compare Shirt vs Jacket rendered a table, product cards, Compare these products, and sources; Add to cart on Jacket showed “Added to cart. View cart · Checkout”; cart page listed Jacket at $25.00 |
 | Chat card prices | Shirt `$18.00`, Jacket `$25.00` after entity-decode |
+| Shop-style cards (1.4.1) | Shirt thumbnail + `$20.00` struck through / `$18.00`; Jacket thumbnail + `$25.00`; dark rectangular Add to cart; cards in a horizontal scroller |
+| Expand / restore | Header doubles the panel; restore returns original size; only one of the two controls is visible |
 | Runtime logs | Only earlier WP-CLI eval mistakes (`Repository` vs `Kb_Repository`); no widget/REST errors |
 
 ### Notes
@@ -85,7 +88,9 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - `5964a42` Fix PHPStan on WooCommerce product id query
 - `748bcd8` Prefer named products on comparison chat cards
 - `47ba910` Show decoded catalog prices on chat product cards
-- `_this entry_` Document ChatHearth RAG milestone in the changelog
+- `2a6b061` Document ChatHearth RAG milestone in the changelog
+- `973d741` Style chat product cards and add a window size toggle
+- `_this entry_` Document shop-style chat cards and expand/restore
 
 ---
 
