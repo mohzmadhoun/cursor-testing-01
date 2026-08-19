@@ -16,6 +16,7 @@ use ChatHearth\Rag\Markdown_Exporter;
 use ChatHearth\Rag\Retriever;
 use ChatHearth\Rag\Schema;
 use ChatHearth\Rag\Site_Grounding;
+use ChatHearth\Rag\Vector_Store_Factory;
 use ChatHearth\Rest\Cart_Controller;
 use ChatHearth\Rest\Kb_Controller;
 
@@ -234,5 +235,21 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( '/chathearth/v1/kb/sync', $routes );
 		$this->assertArrayHasKey( '/chathearth/v1/cart', $routes );
+	}
+
+	public function test_chroma_ping_explains_missing_http_server() {
+		$store  = new \ChatHearth\Rag\Chroma_Vector_Store( 'http://127.0.0.1:59999' );
+		$status = $store->ping_status();
+
+		$this->assertFalse( $status['ok'] );
+		$this->assertStringContainsString( 'Chroma', $status['message'] );
+		$this->assertStringContainsString( 'HTTP', $status['message'] );
+	}
+
+	public function test_builtin_ping_status_is_ready() {
+		$status = Vector_Store_Factory::ping_status( 'builtin' );
+
+		$this->assertTrue( $status['ok'] );
+		$this->assertSame( 'builtin', $status['store'] );
 	}
 }

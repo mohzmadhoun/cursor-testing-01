@@ -205,15 +205,24 @@
 		});
 
 		$('#chathearth-kb-ping').on('click', function () {
+			setStatus(cfg.i18n.syncing);
 			fetch(cfg.pingUrl, {
 				method: 'POST',
 				credentials: 'same-origin',
 				headers: headers(),
-				body: '{}'
+				body: JSON.stringify({
+					store: $('#chathearth_rag_store').val() || '',
+					chroma_url: $('#chathearth_chroma_url').val() || ''
+				})
 			})
 				.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
 				.then(function (result) {
-					setStatus(result.ok && result.data && result.data.ok ? cfg.i18n.pingOk : cfg.i18n.pingFail);
+					var msg = result.data && result.data.message ? result.data.message : '';
+					if (result.ok && result.data && result.data.ok) {
+						setStatus(msg || cfg.i18n.pingOk);
+						return;
+					}
+					setStatus(msg || cfg.i18n.pingFail);
 				})
 				.catch(function () {
 					setStatus(cfg.i18n.pingFail);

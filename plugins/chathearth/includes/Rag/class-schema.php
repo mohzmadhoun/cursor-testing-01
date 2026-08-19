@@ -105,20 +105,46 @@ final class Schema {
 	}
 
 	/**
-	 * Absolute directory for generated markdown files.
+	 * Plugin-owned uploads root (markdown + optional local Chroma files).
 	 */
-	public static function upload_dir(): string {
+	public static function plugin_upload_dir(): string {
 		$uploads = wp_upload_dir();
 		$base    = (string) $uploads['basedir'];
 
-		return trailingslashit( $base ) . 'chathearth/kb';
+		return trailingslashit( $base ) . 'chathearth';
+	}
+
+	/**
+	 * Absolute directory for generated markdown files.
+	 */
+	public static function upload_dir(): string {
+		return trailingslashit( self::plugin_upload_dir() ) . 'kb';
+	}
+
+	/**
+	 * Persist directory for a Chroma server running on this host.
+	 *
+	 * WordPress does not read these files itself. A Chroma HTTP process writes them.
+	 */
+	public static function chroma_dir(): string {
+		return trailingslashit( self::plugin_upload_dir() ) . 'chroma';
 	}
 
 	/**
 	 * Create the markdown directory and deny public listing.
 	 */
 	public static function ensure_upload_dir(): void {
-		$dir = self::upload_dir();
+		self::protect_dir( self::plugin_upload_dir() );
+		self::protect_dir( self::upload_dir() );
+		self::protect_dir( self::chroma_dir() );
+	}
+
+	/**
+	 * Create a directory and deny public HTTP access.
+	 *
+	 * @param string $dir Absolute path.
+	 */
+	private static function protect_dir( string $dir ): void {
 		if ( '' === $dir || '/' === $dir ) {
 			return;
 		}

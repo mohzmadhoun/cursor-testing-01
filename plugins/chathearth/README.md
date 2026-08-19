@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.2** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
+**v1.4.3** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
 
 ## Requirements (v1)
 
@@ -100,6 +100,22 @@ Response: `{ "reply": "...", "sources": [ { "title", "url", "type" } ], "product
 `POST /wp-json/chathearth/v1/cart` — `{ "product_id", "quantity?", "variation_id?" }` (same nonce). WooCommerce cart only.
 
 Knowledge Base admin REST (`manage_options`): `/kb/sync`, `/kb/status`, `/kb/entries`, `/kb/ping`.
+
+### Local Chroma on this WordPress server
+
+PHP cannot open a Chroma SQLite/parquet folder. ChatHearth talks to **Chroma over HTTP**. You can still keep the data files on the same machine:
+
+1. Install Chroma (`pip install chromadb` in a venv).
+2. Start it with a persist directory, for example:
+
+```bash
+plugins/chathearth/bin/run-chroma.sh
+```
+
+That writes files under `wp-content/uploads/chathearth/chroma/` (not publicly listable) and listens on `http://127.0.0.1:8000`.
+3. In **Settings → ChatHearth → Knowledge Base**, choose **Chroma (self-hosted HTTP)**, set the URL to `http://127.0.0.1:8000`, save, then **Test vector store** and **Sync now**.
+
+If you do not want to run a Chroma process, use **Local (WordPress database)**.
 
 ## Documentation
 

@@ -279,6 +279,32 @@ ensure_htaccess() {
 	EOF
 }
 
+start_local_chroma() {
+	local bin="${HOME}/chathearth-chroma/bin/chroma"
+	local data="${WP_DIR}/wp-content/uploads/chathearth/chroma"
+
+	if [ ! -x "$bin" ]; then
+		return 1
+	fi
+
+	mkdir -p "$data"
+	if curl -fsS --max-time 2 "http://127.0.0.1:8000/api/v2/heartbeat" >/dev/null 2>&1; then
+		log "Chroma is already listening on http://127.0.0.1:8000"
+		return 0
+	fi
+
+	log "Starting local Chroma (persist ${data})"
+	nohup "$bin" run --path "$data" --host 127.0.0.1 --port 8000 >/tmp/chathearth-chroma.log 2>&1 &
+	local i
+	for i in $(seq 1 20); do
+		if curl -fsS --max-time 2 "http://127.0.0.1:8000/api/v2/heartbeat" >/dev/null 2>&1; then
+			return 0
+		fi
+		sleep 1
+	done
+	return 1
+}
+
 site_summary() {
 	cat <<-EOF
 

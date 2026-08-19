@@ -60,7 +60,7 @@ final class Privacy {
 			'chathearth'
 		) . '</li>';
 		$content .= '<li>' . esc_html__(
-			'If knowledge retrieval (RAG) is enabled, visitor questions are embedded and compared to indexed website content. Generated markdown copies of selected pages, posts, products, and taxonomies are stored on this site. Embeddings may be stored in the WordPress database, sent to a self-hosted Chroma server, or sent to Pinecone, depending on the store configured by the site owner. The OpenAI Embeddings API may be used (via the Connectors key) to create those vectors.',
+			'If knowledge retrieval (RAG) is enabled, visitor questions are embedded and compared to indexed website content. Generated markdown copies of selected pages, posts, products, and taxonomies are stored on this site. Embeddings may be stored in the WordPress database, sent to a self-hosted Chroma HTTP server (which may keep its own data files on this server), or sent to Pinecone, depending on the store configured by the site owner. The OpenAI Embeddings API may be used (via the Connectors key) to create those vectors.',
 			'chathearth'
 		) . '</li>';
 		$content .= '<li>' . esc_html__(

@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -144,6 +144,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.3 =
+* Clarify that Chroma is an HTTP server (data files on this host are written by that process). Clearer Test vector store errors. Helper script `bin/run-chroma.sh`.
+
 = 1.4.2 =
 * Smooth expand and restore animation for the chat window.
 
@@ -187,6 +190,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.3 =
+Chroma still needs a running HTTP server; use Local (WordPress database) if you do not want to run one.
 
 = 1.4.2 =
 Smooth expand and restore animation for the chat window.

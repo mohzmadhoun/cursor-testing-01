@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ChatHearth\Options;
 use ChatHearth\Plugin;
+use ChatHearth\Rag\Schema;
 use ChatHearth\Rag\Vector_Store_Factory;
 
 /**
@@ -500,12 +501,25 @@ final class Settings_Page {
 								<option value="<?php echo esc_attr( $driver_id ); ?>" <?php selected( $store, $driver_id ); ?>><?php echo esc_html( $driver_label ); ?></option>
 							<?php endforeach; ?>
 						</select>
-						<p class="description"><?php echo esc_html__( 'Use a self-hosted Chroma server or Pinecone. The WordPress-database option stores embeddings on this site and needs no extra server.', 'chathearth' ); ?></p>
+						<p class="description"><?php echo esc_html__( 'Local (WordPress database) stores vectors on this site and needs no extra process. Chroma is a Python HTTP server (it can run on this same machine and write data files to a folder). Pinecone is a hosted index. WordPress cannot open a Chroma folder by itself.', 'chathearth' ); ?></p>
 					</td>
 				</tr>
 				<tr class="chathearth-store-fields" data-store="chroma">
 					<th scope="row"><label for="chathearth_chroma_url"><?php echo esc_html__( 'Chroma URL', 'chathearth' ); ?></label></th>
-					<td><input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_url]" id="chathearth_chroma_url" type="url" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_url'] ); ?>" placeholder="http://127.0.0.1:8000" /></td>
+					<td>
+						<input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_url]" id="chathearth_chroma_url" type="url" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_url'] ); ?>" placeholder="http://127.0.0.1:8000" />
+						<p class="description">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: persist directory path */
+									__( 'Chroma must already be running and reachable at this URL (same server is fine, e.g. http://127.0.0.1:8000). Start it with persist files on this host, for example: chroma run --path "%s" --host 127.0.0.1 --port 8000. A helper script is in the plugin folder: bin/run-chroma.sh. Save settings before Sync now.', 'chathearth' ),
+									Schema::chroma_dir()
+								)
+							);
+							?>
+						</p>
+					</td>
 				</tr>
 				<tr class="chathearth-store-fields" data-store="chroma">
 					<th scope="row"><label for="chathearth_chroma_collection"><?php echo esc_html__( 'Chroma collection', 'chathearth' ); ?></label></th>

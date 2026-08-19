@@ -54,8 +54,51 @@ final class Vector_Store_Factory {
 	public static function drivers(): array {
 		return array(
 			'builtin'  => __( 'Local (WordPress database)', 'chathearth' ),
-			'chroma'   => __( 'Chroma (self-hosted)', 'chathearth' ),
+			'chroma'   => __( 'Chroma (self-hosted HTTP)', 'chathearth' ),
 			'pinecone' => __( 'Pinecone', 'chathearth' ),
 		);
+	}
+
+	/**
+	 * Ping the selected driver (optionally overriding the saved Chroma URL).
+	 *
+	 * @param string $driver     Store id.
+	 * @param string $chroma_url Optional Chroma base URL.
+	 * @return array<string, mixed>
+	 */
+	public static function ping_status( string $driver = '', string $chroma_url = '' ): array {
+		if ( '' === $driver ) {
+			$driver = (string) Options::get( 'rag_vector_store', 'builtin' );
+		}
+
+		switch ( $driver ) {
+			case 'chroma':
+				$status          = ( new Chroma_Vector_Store( $chroma_url ) )->ping_status();
+				$status['store'] = 'chroma';
+				return $status;
+			case 'pinecone':
+				$ok = ( new Pinecone_Vector_Store() )->ping();
+				return array(
+					'ok'      => $ok,
+					'store'   => 'pinecone',
+					'url'     => '',
+					'api'     => '',
+					'message' => $ok
+						? __( 'Connected to Pinecone.', 'chathearth' )
+						: __( 'Pinecone is not reachable. Check the index host and API key, then save settings.', 'chathearth' ),
+				);
+			case 'builtin':
+			default:
+				$ok = ( new Builtin_Vector_Store() )->ping();
+				return array(
+					'ok'      => $ok,
+					'store'   => 'builtin',
+					'url'     => '',
+					'api'     => '',
+					'message' => $ok
+						? __( 'Local WordPress-database store is ready. No Chroma server is required.', 'chathearth' )
+						: __( 'Vector store is not reachable.', 'chathearth' ),
+				);
+		}
 	}
 }
