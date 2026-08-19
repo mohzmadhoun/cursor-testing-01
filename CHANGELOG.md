@@ -50,7 +50,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - Catalog matching attaches product cards from names in the visitor message so comparison and add-to-cart still work when RAG is off or retrieval misses a product document.
 - Comparison questions that name two or more products show those cards instead of every related RAG hit.
 - Chat card prices use `wc_price()` and entity-decoding so visitors see `$18.00` rather than HTML entities.
-- Plugin version **1.4.2**: shop-style product cards (image, current and previous price, Add to cart matching the shop `wp-element-button`), a header control that doubles the chat window with a restore control, a 0.4s size animation, and a horizontal scroller when cards do not fit.
+- Plugin version **1.4.3**: Chroma remains an HTTP client; persist files live in `uploads/chathearth/chroma/` when a Chroma process runs on this host. Test vector store returns a concrete error if nothing is listening. Helper: `plugins/chathearth/bin/run-chroma.sh`.
 
 ### Verification
 
@@ -72,6 +72,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 | Shop-style cards (1.4.1) | Shirt thumbnail + `$20.00` struck through / `$18.00`; Jacket thumbnail + `$25.00`; dark rectangular Add to cart; cards in a horizontal scroller |
 | Expand / restore | Header doubles the panel; restore returns original size; only one of the two controls is visible |
 | Smooth resize | Width and height ease over ~0.4s in both directions; no snap or flicker |
+| Chroma HTTP | `chroma run` on this host writes `uploads/chathearth/chroma/chroma.sqlite3`; ChatHearth ping returns “Connected to Chroma (v2) at http://127.0.0.1:8000.” |
 | Runtime logs | Only earlier WP-CLI eval mistakes (`Repository` vs `Kb_Repository`); no widget/REST errors |
 
 ### Notes
@@ -93,7 +94,8 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - `973d741` Style chat product cards and add a window size toggle
 - `8f9a3a4` Document shop-style chat cards and expand/restore
 - `47d319a` Animate chat window expand and restore
-- `_this entry_` Document the chat window size animation
+- `1760204` Document the chat window size animation
+- `_this entry_` Explain local Chroma files vs HTTP
 
 ---
 
