@@ -252,7 +252,7 @@ final class Rate_Limiter {
 			return;
 		}
 
-		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		$site_name    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$settings_url = admin_url( 'options-general.php?page=chathearth&tab=protection' );
 
 		$subject = sprintf(
@@ -314,6 +314,8 @@ final class Rate_Limiter {
 	}
 
 	/**
+	 * Return the site-wide rate-limit error.
+	 *
 	 * @return WP_Error
 	 */
 	private function global_error(): WP_Error {
@@ -325,6 +327,8 @@ final class Rate_Limiter {
 	}
 
 	/**
+	 * Return the per-minute rate-limit error.
+	 *
 	 * @return WP_Error
 	 */
 	private function minute_error(): WP_Error {
@@ -336,6 +340,8 @@ final class Rate_Limiter {
 	}
 
 	/**
+	 * Return the per-hour rate-limit error.
+	 *
 	 * @return WP_Error
 	 */
 	private function hour_error(): WP_Error {
@@ -347,6 +353,8 @@ final class Rate_Limiter {
 	}
 
 	/**
+	 * Return the lock-contention error.
+	 *
 	 * @return WP_Error
 	 */
 	private function busy_error(): WP_Error {

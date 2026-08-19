@@ -29,7 +29,7 @@ final class Ai_Gateway {
 	/**
 	 * Generate an assistant reply.
 	 *
-	 * @param string               $message Current user message.
+	 * @param string                                  $message Current user message.
 	 * @param list<array{role:string,content:string}> $history Prior turns (user/assistant).
 	 * @return string|WP_Error
 	 */
@@ -65,9 +65,6 @@ final class Ai_Gateway {
 		 * @param string $message Current user message.
 		 */
 		$history = apply_filters( 'chathearth_messages', $history, $message );
-		if ( ! is_array( $history ) ) {
-			$history = array();
-		}
 
 		/**
 		 * Fires before the AI generate call.
@@ -135,14 +132,12 @@ final class Ai_Gateway {
 			);
 		}
 
-		$text = is_string( $result ) ? $result : '';
-
 		/**
 		 * Filter the assistant reply text.
 		 *
 		 * @param string $text    Reply.
 		 * @param string $message User message.
 		 */
-		return (string) apply_filters( 'chathearth_reply', $text, $message );
+		return (string) apply_filters( 'chathearth_reply', $result, $message );
 	}
 }

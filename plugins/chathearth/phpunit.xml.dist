@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<phpunit
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+		bootstrap="tests/bootstrap.php"
+		colors="true"
+		beStrictAboutTestsThatDoNotTestAnything="true"
+		convertErrorsToExceptions="true"
+		convertWarningsToExceptions="true"
+		convertNoticesToExceptions="true"
+		convertDeprecationsToExceptions="true"
+		cacheResultFile="../../.phpunit.cache/chathearth"
+		>
+	<testsuites>
+		<testsuite name="chathearth">
+			<directory prefix="test-" suffix=".php">tests</directory>
+		</testsuite>
+	</testsuites>
+	<php>
+		<env name="WP_TESTS_DIR" value="/var/www/wp-tests-lib"/>
+	</php>
+</phpunit>

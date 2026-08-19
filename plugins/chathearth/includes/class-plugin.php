@@ -25,6 +25,8 @@ use ChatHearth\Rest\Chat_Controller;
 final class Plugin {
 
 	/**
+	 * Shared plugin instance.
+	 *
 	 * @var self|null
 	 */
 	private static $instance = null;

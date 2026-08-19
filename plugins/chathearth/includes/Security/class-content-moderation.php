@@ -33,7 +33,7 @@ final class Content_Moderation {
 	/**
 	 * Check message (and user history turns) against keyword list and OpenAI Moderations.
 	 *
-	 * @param string                                         $message Current user message.
+	 * @param string                                          $message Current user message.
 	 * @param list<array{role?:string,content?:string}>|array $history Prior turns (client-controlled).
 	 * @return true|WP_Error
 	 */
@@ -77,7 +77,7 @@ final class Content_Moderation {
 	/**
 	 * Build the string checked by both layers (current message + user history).
 	 *
-	 * @param string                                         $message Current message.
+	 * @param string                                          $message Current message.
 	 * @param list<array{role?:string,content?:string}>|array $history History turns.
 	 */
 	private function build_moderation_text( string $message, array $history ): string {
@@ -120,7 +120,7 @@ final class Content_Moderation {
 		 * @param list<string> $phrases Phrases (already trimmed, non-empty).
 		 */
 		$phrases = apply_filters( 'chathearth_disallowed_phrases', $phrases );
-		if ( ! is_array( $phrases ) || empty( $phrases ) ) {
+		if ( empty( $phrases ) ) {
 			return true;
 		}
 
@@ -238,7 +238,7 @@ final class Content_Moderation {
 				return '';
 			}
 			$key = $auth->getApiKey();
-			return is_string( $key ) ? trim( $key ) : '';
+			return trim( $key );
 		} catch ( \Throwable $e ) {
 			Logger::error(
 				'OpenAI moderation key resolve failed.',

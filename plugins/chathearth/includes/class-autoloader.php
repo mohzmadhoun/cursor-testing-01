@@ -28,17 +28,17 @@ final class Autoloader {
 	/**
 	 * Load a class file.
 	 *
-	 * @param string $class Fully qualified class name.
+	 * @param string $fqcn Fully qualified class name.
 	 */
-	public static function load( string $class ): void {
+	public static function load( string $fqcn ): void {
 		$prefix = __NAMESPACE__ . '\\';
 
-		if ( 0 !== strpos( $class, $prefix ) ) {
+		if ( 0 !== strpos( $fqcn, $prefix ) ) {
 			return;
 		}
 
-		$relative = substr( $class, strlen( $prefix ) );
-		$parts    = explode( '\\', $relative );
+		$relative   = substr( $fqcn, strlen( $prefix ) );
+		$parts      = explode( '\\', $relative );
 		$class_name = array_pop( $parts );
 
 		// Convert Class_Name to class-class-name.php (WordPress style).

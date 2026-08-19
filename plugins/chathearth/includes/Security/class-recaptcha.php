@@ -147,35 +147,35 @@ final class Recaptcha {
 	}
 
 	/**
+	 * Set the short-lived browser cookie for a verified visitor.
+	 *
 	 * @param string $token Pass token.
 	 */
 	private function set_pass_cookie( string $token ): void {
 		$secure   = is_ssl();
 		$httponly = true;
-		$path     = COOKIEPATH ? COOKIEPATH : '/';
-		$domain   = COOKIE_DOMAIN ? COOKIE_DOMAIN : '';
+		$path     = defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/';
+		$domain   = defined( 'COOKIE_DOMAIN' ) && COOKIE_DOMAIN ? COOKIE_DOMAIN : '';
 
-		if ( PHP_VERSION_ID >= 70300 ) {
-			setcookie(
-				self::COOKIE_NAME,
-				$token,
-				array(
-					'expires'  => time() + self::PASS_TTL,
-					'path'     => $path,
-					'domain'   => $domain,
-					'secure'   => $secure,
-					'httponly' => $httponly,
-					'samesite' => 'Lax',
-				)
-			);
-		} else {
-			setcookie( self::COOKIE_NAME, $token, time() + self::PASS_TTL, $path . '; samesite=Lax', $domain, $secure, $httponly );
-		}
+		setcookie(
+			self::COOKIE_NAME,
+			$token,
+			array(
+				'expires'  => time() + self::PASS_TTL,
+				'path'     => $path,
+				'domain'   => $domain,
+				'secure'   => $secure,
+				'httponly' => $httponly,
+				'samesite' => 'Lax',
+			)
+		);
 
 		$_COOKIE[ self::COOKIE_NAME ] = $token;
 	}
 
 	/**
+	 * Build the transient key for a human-pass token.
+	 *
 	 * @param string $token Pass token.
 	 */
 	private function pass_transient_key( string $token ): string {

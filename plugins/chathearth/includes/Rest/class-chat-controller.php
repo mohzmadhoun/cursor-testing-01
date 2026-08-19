@@ -45,12 +45,12 @@ final class Chat_Controller {
 				'callback'            => array( $this, 'handle_chat' ),
 				'permission_callback' => array( $this, 'permission_check' ),
 				'args'                => array(
-					'message' => array(
+					'message'         => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_textarea_field',
 					),
-					'history' => array(
+					'history'         => array(
 						'required'          => false,
 						'type'              => 'array',
 						'default'           => array(),
