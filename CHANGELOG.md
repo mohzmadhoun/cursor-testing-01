@@ -25,6 +25,72 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #3 — Import ChatHearth as the first plugin project
+
+_2026-08-19_
+
+### Summary
+
+Imported **ChatHearth - AI Chatbot 1.3.0** from the supplied archive and installed
+it as the repository's first ongoing plugin project. The original source is
+preserved as a baseline commit before repository-specific quality changes.
+
+### Added
+
+- `plugins/chathearth/` with its frontend chatbot, admin settings, OpenAI gateway,
+  REST controller, moderation, rate limiting, optional reCAPTCHA, documentation,
+  and product plans.
+- Six integration tests covering bootstrap, defaults, settings boundaries, REST
+  registration, missing-nonce rejection, and history sanitization.
+- PHPStan discovery for WordPress 7's bundled PHP AI Client.
+
+### Changed
+
+- Applied the repository's WordPress coding standard to the imported source.
+- Removed redundant runtime type checks exposed by PHPStan and simplified the
+  reCAPTCHA cookie path to match the plugin's declared PHP 7.4 minimum.
+- Kept the downloaded source and the integration changes in separate commits so
+  future work can distinguish upstream behavior from repository maintenance.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| Archive safety | One top-level directory; no path traversal or symlinks |
+| Archive SHA-256 | `b4ba14e2b65742d2059e876b94f7f443ccba393d428ae2759bcc32fe8e11c198` |
+| Plugin state | Active, version 1.3.0 |
+| Frontend widget | Launcher, welcome, starters, input, and controls render |
+| Direct REST/OpenAI request | Returned exactly `ChatHearth works` |
+| Browser chat | Returned exactly `Browser chat works` |
+| Admin settings | Welcome, Protection, Appearance, and AI Settings tabs render |
+| Protection settings | Rate limits, moderation, reCAPTCHA, and kill switch present |
+| ChatHearth tests | 6 tests, 17 assertions |
+| Full suite | PHPCS/PHPStan clean; 24 tests, 41 assertions |
+| Runtime logs | No PHP or application errors |
+
+### Notes
+
+- WordPress core, uploads, database state, generated ZIP files, and credentials
+  remain outside Git. Only the plugin's source, tests, and documentation belong
+  under `plugins/chathearth/`.
+- Future ChatHearth work should use one focused branch and PR per feature or fix,
+  with regression tests and browser/API evidence added alongside the change.
+- The public chat endpoint consumes a paid AI API. Existing per-IP/global limits,
+  moderation, and kill switch are therefore part of the product's safety
+  boundary and must remain covered as the plugin evolves.
+- The OpenAI credential remains owned by WordPress Connectors; ChatHearth does
+  not store it.
+
+### Commits
+
+| Commit | Subject |
+| --- | --- |
+| `0a21dd1` | Import ChatHearth AI Chatbot 1.3.0 |
+| `d5fad2d` | Bring ChatHearth under repository quality gates |
+| _this entry_ | Document the project import and workflow |
+
+---
+
 ## PR #1 — Add the MZM Current Year shortcode plugin
 
 _2026-08-19_
