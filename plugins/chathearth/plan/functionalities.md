@@ -1,0 +1,38 @@
+# Core functionalities (v1):
+1. Use WordPress Connectors + AI Client. v1 uses the “AI Provider for OpenAI” plugin and the OpenAI API key from Connectors (fixed default model in code; Anthropic/Google later).
+2. Settings page:
+- Appearance: default launcher icon with shape (circle/square), border/background/icon colors, size, position, popup size, header title, bubble colors.
+- Welcome greeting + clickable starter phrases (one per line).
+- System prompt for the AI model.
+- Protection: enable/disable (kill switch); per-IP rate limits (per minute / per hour); global site-wide rate limits (per minute / per hour); escalate to admin after N global-limit hits in an hour (email + dismissible admin notice); optional auto-disable chatbot on escalation; max message length (UTF-8 safe truncation); optional **Google reCAPTCHA v2** checkbox (enabled automatically when both site key and secret key are set; one successful solve unlocks chat for about one hour via a short-lived human-pass cookie).
+3. Site-wide floating icon → chat popup → welcome + starter chips → user messages via REST to OpenAI. Replies are non-streaming in v1 (typing indicator, then full reply). History lives in browser localStorage.
+
+# Future functionalities for future releases:
+1. The user can enable the RAG functionality
+2. The RAG functionality should allow the user to manage the knowledge base documents, the user can add / remove / update documents, versioning mechanisim for the documents updates should be used.
+3. The RAG functionality could use the website content as part of hte knowledge base, this could require generate md files for each article, product, and any custom post in the website database. The user should be able to select what post types should be used to generate the md files and used for the knowledge base.
+3b. Comparison mode: visitors can ask the chatbot to compare services, products, benefits, pricing tiers, or other site/store items using content from the knowledge base (pages, posts, products, and uploaded documents). Answers should be structured (e.g. side-by-side differences, pros/cons) and grounded only in indexed website/store content — not invent attributes that are not in the KB.
+4. The vector store could be managed locally using chroma or sqlite, you should select the most appropriate solution, this is an internally selection, the user will not have an option to select. Only one option will be used for the plugin if the local storage is selected. (Decision deferred until the first RAG release; v1 only reserves extension points.)
+5. The vector store could be on a 3rd party solution like PineCone or SupaBase, we will specify the list of the initial providers and release them incrementally, then we can add more providers based on the customers' requests.
+6. The user can enable integration with N8N webhook, this will allow the users to implement their complicated RAG systems and manage them by theirselves, or create their own agentic systems to manage users queries like booking handling, and other custom tasks that the users want to make available for their visitors.
+7. Using the N8N webhook, could replace the WordPress connectors integration with AI providers like OpenAI or at least replace the RAG system of the plugin.
+8. Visibility and placement controls to hide or limit where the chatbot appears (control details to be specified later).
+9. Embeddable placement via shortcode, Gutenberg block, Elementor widget, and additional page-builder integrations as needed.
+10. Real token streaming of AI replies into the chat popup (v1 uses a typing indicator and returns the full reply at once, because WordPress AI Client / Connectors do not support streaming yet).
+11. Settings to select a main and a backup AI model provider (e.g. OpenAI, Anthropic, Google via Connectors).
+12. Integration with third-party AI model providers such as DeepSeek, OpenRouter, and others based on demand.
+13. Allow uploading a custom image/SVG for the frontend launcher icon (v1 ships one default icon plus style controls only).
+14. Server-side conversation / message history storage and management (v1 keeps history in the browser via localStorage only; design deferred).
+15. Tokens monitoring for chat usage (prompt / completion / total), possibly using something like tiktoken (or an equivalent tokenizer suitable for WordPress / PHP) to estimate or track token consumption per request, per conversation, and over time in the admin.
+16. Cost monitoring when applicable: estimate or record spend based on provider/model pricing and token usage, with admin visibility (e.g. daily/monthly totals) for supported AI providers.
+17. Hard cost / token ceilings with soft alerts (e.g. 50%/80%/100%) and escalation to the site admin (email / admin notice / optional webhook); auto-disable chat (kill switch) when a hard ceiling is hit. (v1 already escalates on repeated **global request-rate** hits; this item is the token/$ follow-on.)
+18. Latency monitoring and SLOs (retrieve vs generate vs end-to-end; p50/p95/p99; soft warn / hard timeout with fallback).
+19. Reliability observability: success rate, error taxonomy, retry/failover rates, RAG emptiness rate, index health (doc count, stale %, embedding job lag).
+20. Quality evaluation for chat and RAG: groundedness/faithfulness, answer relevance, context relevance (Precision@k / nDCG), citation coverage, offline golden-set / RAGAS-style suites, online sampling with LLM-as-judge and human review.
+21. Hallucination / inaccuracy detection: grounding checks, contradiction checks, self-consistency, known-unknown policy when retrieval is weak, policy validators, regression “must not invent” suites, human review queue for low-confidence or reported answers.
+22. User feedback signals in the product: thumbs up/down, “report answer”, regenerate, abandonment analytics feeding the evaluation loop.
+23. Explainability: admin “why this answer” (chunks used, scores, model, prompt version); optional citations/sources shown to visitors when RAG is enabled.
+24. Transparency: clear AI disclosure, model/provider visibility where appropriate, data-use and retention notices (GDPR-friendly).
+25. Controllability: grounding-required mode, temperature/max-tokens, policy packs, KB scope controls, human handoff / N8N escalate, admin overrides (disable chat, swap model, freeze index), safety/moderation filters.
+26. Evaluation process: A/B or interleaving of models/retrieval configs, error-analysis loops, canary/shadow traffic, SLO/error budgets, red-teaming (prompt injection, jailbreaks, poisoned docs). See [`metrics-and-methods-for-quality.md`](metrics-and-methods-for-quality.md) for the full metrics catalog.
+27. Additional CAPTCHA providers beyond Google reCAPTCHA v2 (already optional in Protection when keys are set): **Cloudflare Turnstile**, **hCaptcha**, and **Google reCAPTCHA v3** (score-based). Admin choice among providers; REST verifies the challenge token before the AI call. Complements per-IP/global rate limits; does not replace token/$ ceilings (item 17).

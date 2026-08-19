@@ -29,6 +29,7 @@ CHANGELOG.md               Running record of the work done, one entry per pull r
 .cursor/install.sh         Builds the stack: packages, database, WordPress, WooCommerce, test suite
 .cursor/start.sh           Per-boot startup: MariaDB, Apache, plugin symlinks
 plugins/hello-cursor/      Reference plugin: settings page, shortcode, REST route, tests
+plugins/chathearth/        Ongoing ChatHearth AI chatbot project
 data/sample-products.csv   Sample catalogue, imported into WooCommerce on first install
 bin/new-plugin.sh          Scaffolds a new plugin
 bin/test.sh                Runs the PHPUnit suites
@@ -38,6 +39,24 @@ phpcs.xml.dist             WordPress coding standards ruleset
 phpstan.neon.dist          Static analysis configuration
 wp-cli.yml                 Points `wp` at the site, so no --path is needed
 ```
+
+## Plugin project workflow
+
+`plugins/chathearth/` is the first ongoing product project in this repository.
+Keep its production source, tests, and project documentation in that directory.
+Keep WordPress core, uploads, database state, generated ZIP files, caches, and
+credentials outside Git.
+
+For future ChatHearth work:
+
+1. Create one branch and pull request per focused feature or fix.
+2. Add regression tests for the behavior being changed.
+3. Run `bin/test.sh chathearth`, then `composer check`.
+4. Exercise the affected admin, frontend, and REST/OpenAI flow in the browser.
+5. Add the outcome and non-obvious decisions to `CHANGELOG.md`.
+
+This keeps the imported v1.3.0 baseline auditable and prevents unrelated
+experiments from accumulating in the plugin's main development history.
 
 ## Asking an agent to build a plugin
 

@@ -7,6 +7,11 @@ parameters:
 		- plugins
 	bootstrapFiles:
 		- bin/phpstan-bootstrap.php
+	scanFiles:
+		- /var/www/wordpress/wp-includes/ai-client.php
+		- /var/www/wordpress/wp-includes/ai-client/class-wp-ai-client-prompt-builder.php
+	scanDirectories:
+		- /var/www/wordpress/wp-includes/php-ai-client/src
 	excludePaths:
 		analyseAndScan:
 			- plugins/*/tests/*
