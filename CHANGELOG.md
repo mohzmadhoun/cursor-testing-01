@@ -25,6 +25,43 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #1 — Add the MZM Current Year shortcode plugin
+
+_2026-08-19_
+
+### Summary
+
+Added a small plugin that renders the current year anywhere WordPress processes
+the `[mzm-current-year]` shortcode.
+
+### Added
+
+- `plugins/mzm-current-year` — version 0.1.0 of **MZM Current Year**.
+- `[mzm-current-year]` returns the four-digit year from `wp_date( 'Y' )`, so the
+  output follows WordPress's configured timezone instead of the server timezone.
+- Integration tests for plugin loading, shortcode registration, direct output,
+  and rendering through filtered post content.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| Plugin state | Active; version 0.1.0 |
+| Direct WP-CLI rendering | `2026` |
+| Published page | Browser rendered `Copyright © 2026` |
+| Plugin tests | 4 tests, 5 assertions |
+| Full repository suite | PHPCS/PHPStan clean; 18 tests, 24 assertions total |
+| Browser/admin errors | None |
+
+### Commits
+
+| Commit | Subject |
+| --- | --- |
+| `7678d33` | Add the MZM current-year shortcode plugin |
+| _this entry_ | Document the plugin and verification evidence |
+
+---
+
 ## PR #1 — WordPress plugin development environment for Cloud Agents (continued)
 
 _2026-08-17_
