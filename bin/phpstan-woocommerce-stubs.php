@@ -136,6 +136,19 @@ if ( ! function_exists( 'wc_get_page_permalink' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_price' ) ) {
+	/**
+	 * Format a price for display.
+	 *
+	 * @param mixed                $price Amount.
+	 * @param array<string, mixed> $args  Format args.
+	 */
+	function wc_price( $price, $args = array() ) {
+		unset( $args );
+		return (string) $price;
+	}
+}
+
 if ( ! function_exists( 'get_woocommerce_currency' ) ) {
 	/**
 	 * Store currency code.

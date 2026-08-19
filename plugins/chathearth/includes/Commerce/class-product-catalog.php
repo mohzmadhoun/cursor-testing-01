@@ -48,7 +48,7 @@ final class Product_Catalog {
 
 		$name        = method_exists( $product, 'get_name' ) ? (string) $product->get_name() : get_the_title( $product_id );
 		$url         = (string) get_permalink( $product_id );
-		$price       = method_exists( $product, 'get_price_html' ) ? wp_strip_all_tags( (string) $product->get_price_html() ) : '';
+		$price       = $this->public_price( $product );
 		$purchasable = method_exists( $product, 'is_purchasable' ) && method_exists( $product, 'is_in_stock' )
 			? ( $product->is_purchasable() && $product->is_in_stock() )
 			: false;
@@ -81,6 +81,29 @@ final class Product_Catalog {
 			'type'        => method_exists( $product, 'get_type' ) ? (string) $product->get_type() : 'simple',
 			'variations'  => $variations,
 		);
+	}
+
+	/**
+	 * Plain-text current price for chat cards.
+	 *
+	 * @param object $product WooCommerce product.
+	 */
+	private function public_price( $product ): string {
+		if ( method_exists( $product, 'get_price' ) && function_exists( 'wc_price' ) ) {
+			$html = (string) wc_price( $product->get_price() );
+		} elseif ( method_exists( $product, 'get_price_html' ) ) {
+			$html = (string) $product->get_price_html();
+		} else {
+			return '';
+		}
+
+		$plain     = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
+		$collapsed = preg_replace( '/\s+/', ' ', $plain );
+		if ( ! is_string( $collapsed ) ) {
+			$collapsed = $plain;
+		}
+
+		return trim( $collapsed );
 	}
 
 	/**
