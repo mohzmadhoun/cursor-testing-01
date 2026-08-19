@@ -89,11 +89,13 @@ final class Retriever {
 		unset( $history );
 		$catalog             = new Product_Catalog();
 		$products            = array();
+		$mentioned           = array();
 		$this->last_sources  = array();
 		$this->last_products = array();
 
 		foreach ( $catalog->find_mentioned( $message ) as $card ) {
-			$products[ (int) $card['id'] ] = $card;
+			$mentioned[ (int) $card['id'] ] = $card;
+			$products[ (int) $card['id'] ]  = $card;
 		}
 
 		if ( Options::is_rag_enabled() ) {
@@ -140,8 +142,12 @@ final class Retriever {
 			}
 		}
 
-		$this->last_products = array_values( $products );
-		$prompt             .= $this->catalog_prompt( $this->last_products );
+		if ( count( $mentioned ) >= 2 && $this->looks_like_comparison( $message ) ) {
+			$this->last_products = array_values( $mentioned );
+		} else {
+			$this->last_products = array_slice( array_values( $products ), 0, 6 );
+		}
+		$prompt .= $this->catalog_prompt( $this->last_products );
 
 		return $prompt;
 	}
