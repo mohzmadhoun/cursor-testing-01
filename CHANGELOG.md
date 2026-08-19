@@ -25,6 +25,70 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #4 — ChatHearth RAG, website grounding, and chat commerce
+
+_2026-08-19_
+
+### Summary
+
+Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected site content to markdown, incrementally reindexes changed entries, retrieves passages from a WordPress-database, Chroma, or Pinecone store, always grounds the assistant in this website, and lets visitors compare products and add them to the WooCommerce cart from chat.
+
+### Added
+
+- `plugins/chathearth/plan/cursor-milestone-01.md` with the locked architecture and implementation steps for this milestone.
+- Knowledge Base settings tab: source post types and taxonomies, site/store identity, vector-store choice (builtin / Chroma / Pinecone), Sync now, Test vector store, and per-entry include/exclude.
+- Markdown exporters for pages, posts, public custom post types, WooCommerce products, taxonomies, site identity, and store summary; files under `uploads/chathearth/kb/`.
+- Incremental indexer (`save_post`, terms, WooCommerce product hooks, settings changes) that re-embeds only a source whose markdown hash changed.
+- Vector stores: cosine search in `wp_chathearth_kb_chunks`, HTTP client for self-hosted Chroma, and Pinecone upsert/query (API key blank-on-save like reCAPTCHA).
+- Always-on website grounding on `chathearth_system_prompt` (priority 5), including off-topic refusal even when RAG retrieval is off.
+- Chat REST extras: `sources[]`, `products[]`, `commerce` cart/checkout URLs; `POST /chathearth/v1/cart` with the same `wp_rest` nonce.
+- Widget UI: source chips, product cards, Compare these products, Add to cart, Markdown tables, and links to matching pages/posts/products.
+
+### Changed
+
+- Plugin version **1.4.0**.
+- Catalog matching attaches product cards from names in the visitor message so comparison and add-to-cart still work when RAG is off or retrieval misses a product document.
+- Comparison questions that name two or more products show those cards instead of every related RAG hit.
+- Chat card prices use `wc_price()` and entity-decoding so visitors see `$18.00` rather than HTML entities.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 36 tests / 82 assertions (ChatHearth 18 tests, 58 assertions). PHPUnit injects vectors via `chathearth_pre_embed` and does not call OpenAI. |
+| Live KB | 29 entries indexed (pages, posts, sample products, terms, `site:identity`, `site:woocommerce`) on the builtin store |
+| Incremental index | Editing Sample Page (`post:2`) set only that `source_id` to `pending`, then `indexed` after `process_queue`; unchanged markdown hash-skipped |
+| Include/exclude | `post:34` excluded (vectors dropped) then re-included and reindexed |
+| Admin Knowledge Base tab | Enable RAG, vector store, Sync now, Test vector store, post types, taxonomies, In RAG, search |
+| Admin REST | `kb/status` 29 indexed, builtin ping ok; `kb/entries?search=Sample` returns Sample Page |
+| Off-topic chat | Refused general trivia and stayed on this site (grounding) |
+| Product compare (OpenAI) | Markdown table for Shirt vs Jacket with prices, stock, and product URLs; `products[]` included Shirt and Jacket |
+| Page question (OpenAI) | Answered Sample Page with a link to `/sample-page/` and that page in `sources[]` |
+| Cart service / REST | Shirt (17) and Jacket (25) added; responses include `cart_url` and `checkout_url` |
+| Homepage widget | Launcher, `restUrl`/`cartUrl`, Add to cart / Compare these / Sources i18n, `woocommerce` enabled |
+| Browser widget | Compare Shirt vs Jacket rendered a table, product cards, Compare these products, and sources; Add to cart on Jacket showed “Added to cart. View cart · Checkout”; cart page listed Jacket at $25.00 |
+| Chat card prices | Shirt `$18.00`, Jacket `$25.00` after entity-decode |
+| Runtime logs | Only earlier WP-CLI eval mistakes (`Repository` vs `Kb_Repository`); no widget/REST errors |
+
+### Notes
+
+- RAG retrieval defaults to **off** in plugin settings. This environment enabled it locally for live tests; that option is not committed.
+- Embeddings use OpenAI `text-embedding-3-small` through the same Connectors key as chat. The plugin still does not store the OpenAI key. Pinecone keys follow the reCAPTCHA blank-to-keep / checkbox-to-clear pattern.
+- Chat can add items to the WooCommerce cart and send the visitor to cart/checkout. It does **not** complete payment.
+- The WordPress-database vector store exists so RAG works without Chroma/Pinecone (this site and PHPUnit). It is not a scale replacement for those servers.
+- This PR is stacked on `cursor/chathearth-plugin-36a8` so the diff is the RAG milestone only.
+
+### Commits
+
+- `0dcf7c7` Implement ChatHearth RAG, grounding, and chat commerce
+- `0bb2d28` Match catalog products in chat even when RAG misses
+- `5964a42` Fix PHPStan on WooCommerce product id query
+- `748bcd8` Prefer named products on comparison chat cards
+- `47ba910` Show decoded catalog prices on chat product cards
+- `_this entry_` Document ChatHearth RAG milestone in the changelog
+
+---
+
 ## PR #3 — Import ChatHearth as the first plugin project
 
 _2026-08-19_
