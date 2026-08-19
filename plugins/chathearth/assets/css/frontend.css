@@ -75,6 +75,10 @@
 	display: none;
 	flex-direction: column;
 	overflow: hidden;
+	transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+		height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+		max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+		max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .chathearth-panel.is-open {
@@ -100,10 +104,16 @@
 }
 
 .chathearth-root.is-expanded .chathearth-panel {
-	width: min(calc(var(--chathearth-panel-w) * 2), calc(100vw - 24px));
-	height: min(calc(var(--chathearth-panel-h) * 2), calc(100vh - 80px));
+	width: calc(var(--chathearth-panel-w) * 2);
+	height: calc(var(--chathearth-panel-h) * 2);
 	max-width: calc(100vw - 24px);
 	max-height: calc(100vh - 80px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.chathearth-panel {
+		transition: none;
+	}
 }
 
 .chathearth-header {

@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.1** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
+**v1.4.2** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
 
 ## Requirements (v1)
 
