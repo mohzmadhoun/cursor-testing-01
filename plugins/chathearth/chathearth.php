@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       ChatHearth - AI Chatbot
  * Description:       Site-wide AI chatbot powered by WordPress Connectors (OpenAI in v1).
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 7.0
  * Requires PHP:      7.4
  * Requires Plugins:  ai-provider-for-openai
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHATHEARTH_VERSION', '1.3.0' );
+define( 'CHATHEARTH_VERSION', '1.4.0' );
 define( 'CHATHEARTH_FILE', __FILE__ );
 define( 'CHATHEARTH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CHATHEARTH_URL', plugin_dir_url( __FILE__ ) );

@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.3.0** — activate the plugin after configuring OpenAI under Connectors.
+**v1.4.0** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
 
 ## Requirements (v1)
 
@@ -18,12 +18,15 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 ## Features (v1)
 
 - Site-wide floating chatbot on the front end
-- Settings under **Settings → ChatHearth - AI Chatbot** (tabs: Welcome, Protection, Appearance, AI Settings)
+- Settings under **Settings → ChatHearth - AI Chatbot** (tabs: Welcome, Protection, Appearance, AI Settings, Knowledge Base)
 - Appearance, welcome greeting, starter phrases, system prompt
 - AI provider (OpenAI) and chat model dropdowns
 - Protection against abuse and cost spikes (see below)
-- Non-streaming replies: typing indicator, then the full answer (Markdown rendered in the popup)
+- Non-streaming replies: typing indicator, then the full answer (Markdown rendered in the popup, including tables)
 - Conversation history in **`localStorage`** (survives refresh)
+- Always-on **website grounding**: answers stay on this site even when RAG is off
+- **Knowledge Base (RAG):** export pages, posts, custom post types, products, and taxonomies to markdown; choose Chroma, Pinecone, or the WordPress-database store; incremental reindex
+- **Store chat:** compare products from catalog facts; add purchasable products to the WooCommerce cart from the widget
 
 ## Protection
 
@@ -60,9 +63,11 @@ REST checks run in order: kill switch → reCAPTCHA (if keys set) → global lim
 chathearth.php
 includes/
   Admin/          Settings page + notices
-  Ai/             Ai_Gateway (wp_ai_client_prompt)
+  Ai/             Ai_Gateway (wp_ai_client_prompt), OpenAI credentials helper
+  Commerce/       WooCommerce cart + product cards
   Frontend/       Public assets + widget mount
-  Rest/           /wp-json/chathearth/v1/chat
+  Rag/            Markdown export, indexer, vector stores, retriever, grounding
+  Rest/           /wp-json/chathearth/v1/chat, /cart, /kb/*
   Security/       Rate_Limiter, Recaptcha, Content_Moderation
 assets/           CSS, JS, default launcher SVG
 plan/             Product + architecture docs
@@ -90,14 +95,18 @@ Body: `{ "message": "...", "history": [ { "role": "user"|"assistant", "content":
 
 (`recaptcha_token` required only when reCAPTCHA keys are configured.)
 
-Response: `{ "reply": "..." }`
+Response: `{ "reply": "...", "sources": [ { "title", "url", "type" } ], "products": [ { "id", "name", "url", "price", "purchasable" } ], "commerce": { "enabled", "cart_url", "checkout_url" } }`
+
+`POST /wp-json/chathearth/v1/cart` — `{ "product_id", "quantity?", "variation_id?" }` (same nonce). WooCommerce cart only.
+
+Knowledge Base admin REST (`manage_options`): `/kb/sync`, `/kb/status`, `/kb/entries`, `/kb/ping`.
 
 ## Documentation
 
 | File | Purpose |
 |------|---------|
 | [`plan/functionalities.md`](plan/functionalities.md) | Core + future feature list |
-| [`plan/implementation-plan.md`](plan/implementation-plan.md) | Full implementation plan |
+| [`plan/cursor-milestone-01.md`](plan/cursor-milestone-01.md) | RAG / grounding / chat-commerce milestone |
 | [`plan/architecture.md`](plan/architecture.md) | Extension points, including evaluation and observability |
 | [`plan/metrics-and-methods-for-quality.md`](plan/metrics-and-methods-for-quality.md) | Metrics and methods for AI model and RAG quality |
 | [`readme.txt`](readme.txt) | WordPress.org-style readme |
@@ -111,8 +120,7 @@ Response: `{ "reply": "..." }`
 - Server-side conversation history
 - **CAPTCHA:** Cloudflare Turnstile, hCaptcha, and Google reCAPTCHA **v3** (v2 is already optional when keys are set)
 - **Evaluation and observability:** tokens/cost monitoring, hard cost ceilings with admin escalation, latency SLOs, quality/RAG evaluation, hallucination detection, explainability, transparency, and controllability (see the metrics doc above)
-- RAG (documents, site content → markdown, local or remote vector stores)
-- Comparison answers grounded in website/store content (products, services, benefits, and more)
+- **RAG:** enable retrieval; markdown from selected site content; Chroma, Pinecone, or WordPress-database vectors; comparison answers; add to cart from chat
 - N8N webhook for custom agents / alternate RAG or AI routing
 
 ## License

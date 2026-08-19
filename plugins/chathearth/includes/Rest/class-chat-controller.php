@@ -14,7 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use ChatHearth\Ai\Ai_Gateway;
+use ChatHearth\Commerce\Cart_Service;
 use ChatHearth\Options;
+use ChatHearth\Rag\Retriever;
 use ChatHearth\Security\Content_Moderation;
 use ChatHearth\Security\Rate_Limiter;
 use ChatHearth\Security\Recaptcha;
@@ -196,9 +198,18 @@ final class Chat_Controller {
 			return $reply;
 		}
 
+		$retriever = Retriever::instance();
+
 		return new WP_REST_Response(
 			array(
-				'reply' => $reply,
+				'reply'    => $reply,
+				'sources'  => $retriever->last_sources(),
+				'products' => $retriever->last_products(),
+				'commerce' => array(
+					'enabled'      => Cart_Service::is_available(),
+					'cart_url'     => Cart_Service::is_available() ? Cart_Service::cart_url() : '',
+					'checkout_url' => Cart_Service::is_available() ? Cart_Service::checkout_url() : '',
+				),
 			),
 			200
 		);

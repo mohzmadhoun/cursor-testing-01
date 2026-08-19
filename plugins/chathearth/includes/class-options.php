@@ -57,6 +57,21 @@ final class Options {
 			'moderation_use_openai'             => true,
 			'moderation_disallowed_phrases'     => '',
 			'moderation_block_message'          => 'Sorry, that message cannot be processed. Please rephrase and try again.',
+			'rag_enabled'                       => false,
+			'rag_vector_store'                  => 'builtin',
+			'rag_chroma_url'                    => 'http://127.0.0.1:8000',
+			'rag_chroma_collection'             => 'chathearth',
+			'rag_chroma_tenant'                 => 'default_tenant',
+			'rag_chroma_database'               => 'default_database',
+			'rag_pinecone_api_key'              => '',
+			'rag_pinecone_host'                 => '',
+			'rag_pinecone_namespace'            => '',
+			'rag_post_types'                    => array( 'post', 'page', 'product' ),
+			'rag_taxonomies'                    => array( 'category', 'post_tag', 'product_cat', 'product_tag' ),
+			'rag_include_site_identity'         => true,
+			'rag_include_woocommerce'           => true,
+			'rag_top_k'                         => 6,
+			'rag_chunk_size'                    => 1800,
 		);
 	}
 
@@ -299,6 +314,161 @@ final class Options {
 			$out['moderation_block_message'] = '' !== $msg ? $msg : (string) $defaults['moderation_block_message'];
 		}
 
+		if ( isset( $input['rag_vector_store'] ) ) {
+			$out['rag_enabled'] = ! empty( $input['rag_enabled'] );
+
+			$store                   = sanitize_key( (string) $input['rag_vector_store'] );
+			$out['rag_vector_store'] = in_array( $store, array( 'builtin', 'chroma', 'pinecone' ), true ) ? $store : 'builtin';
+
+			if ( isset( $input['rag_chroma_url'] ) ) {
+				$url                   = esc_url_raw( trim( (string) $input['rag_chroma_url'] ) );
+				$out['rag_chroma_url'] = '' !== $url ? untrailingslashit( $url ) : (string) $defaults['rag_chroma_url'];
+			}
+
+			if ( isset( $input['rag_chroma_collection'] ) ) {
+				$collection                   = sanitize_text_field( (string) $input['rag_chroma_collection'] );
+				$out['rag_chroma_collection'] = '' !== $collection ? $collection : (string) $defaults['rag_chroma_collection'];
+			}
+
+			if ( isset( $input['rag_chroma_tenant'] ) ) {
+				$tenant                   = sanitize_text_field( (string) $input['rag_chroma_tenant'] );
+				$out['rag_chroma_tenant'] = '' !== $tenant ? $tenant : (string) $defaults['rag_chroma_tenant'];
+			}
+
+			if ( isset( $input['rag_chroma_database'] ) ) {
+				$database                   = sanitize_text_field( (string) $input['rag_chroma_database'] );
+				$out['rag_chroma_database'] = '' !== $database ? $database : (string) $defaults['rag_chroma_database'];
+			}
+
+			if ( ! empty( $input['rag_pinecone_clear_key'] ) ) {
+				$out['rag_pinecone_api_key'] = '';
+			} elseif ( isset( $input['rag_pinecone_api_key'] ) ) {
+				$key = trim( (string) $input['rag_pinecone_api_key'] );
+				if ( '' !== $key ) {
+					$out['rag_pinecone_api_key'] = sanitize_text_field( $key );
+				}
+			}
+
+			if ( isset( $input['rag_pinecone_host'] ) ) {
+				$host                     = esc_url_raw( trim( (string) $input['rag_pinecone_host'] ) );
+				$out['rag_pinecone_host'] = '' !== $host ? untrailingslashit( $host ) : '';
+			}
+
+			if ( isset( $input['rag_pinecone_namespace'] ) ) {
+				$out['rag_pinecone_namespace'] = sanitize_text_field( (string) $input['rag_pinecone_namespace'] );
+			}
+
+			$out['rag_post_types'] = self::sanitize_key_list( $input['rag_post_types'] ?? array() );
+			$out['rag_taxonomies'] = self::sanitize_key_list( $input['rag_taxonomies'] ?? array() );
+
+			$out['rag_include_site_identity'] = ! empty( $input['rag_include_site_identity'] );
+			$out['rag_include_woocommerce']   = ! empty( $input['rag_include_woocommerce'] );
+
+			$top_k            = isset( $input['rag_top_k'] ) ? absint( $input['rag_top_k'] ) : (int) $defaults['rag_top_k'];
+			$out['rag_top_k'] = max( 1, min( 12, $top_k ) );
+
+			$chunk                 = isset( $input['rag_chunk_size'] ) ? absint( $input['rag_chunk_size'] ) : (int) $defaults['rag_chunk_size'];
+			$out['rag_chunk_size'] = max( 400, min( 4000, $chunk ) );
+		}
+
 		return $out;
+	}
+
+	/**
+	 * Whether RAG retrieval is enabled.
+	 */
+	public static function is_rag_enabled(): bool {
+		return (bool) self::get( 'rag_enabled', false );
+	}
+
+	/**
+	 * Selected post types for the knowledge base.
+	 *
+	 * @return list<string>
+	 */
+	public static function rag_post_types(): array {
+		$types = self::get( 'rag_post_types', array() );
+		return self::sanitize_key_list( is_array( $types ) ? $types : array() );
+	}
+
+	/**
+	 * Selected taxonomies for the knowledge base.
+	 *
+	 * @return list<string>
+	 */
+	public static function rag_taxonomies(): array {
+		$taxes = self::get( 'rag_taxonomies', array() );
+		return self::sanitize_key_list( is_array( $taxes ) ? $taxes : array() );
+	}
+
+	/**
+	 * Whether site identity is indexed.
+	 */
+	public static function rag_include_site_identity(): bool {
+		return (bool) self::get( 'rag_include_site_identity', true );
+	}
+
+	/**
+	 * Whether the WooCommerce store summary is indexed.
+	 */
+	public static function rag_include_woocommerce(): bool {
+		return (bool) self::get( 'rag_include_woocommerce', true );
+	}
+
+	/**
+	 * Public post types offered in the Knowledge Base UI (no attachments).
+	 *
+	 * @return array<array-key, string> slug => label.
+	 */
+	public static function available_content_post_types(): array {
+		$objects = get_post_types( array( 'public' => true ), 'objects' );
+		$out     = array();
+		foreach ( $objects as $name => $object ) {
+			if ( 'attachment' === $name ) {
+				continue;
+			}
+			$label        = isset( $object->labels->name ) ? (string) $object->labels->name : (string) $name;
+			$out[ $name ] = $label;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Public taxonomies offered in the Knowledge Base UI.
+	 *
+	 * @return array<array-key, string> slug => label.
+	 */
+	public static function available_content_taxonomies(): array {
+		$objects = get_taxonomies( array( 'public' => true ), 'objects' );
+		$out     = array();
+		foreach ( $objects as $name => $object ) {
+			$label                 = isset( $object->labels->name ) ? (string) $object->labels->name : (string) $name;
+			$out[ (string) $name ] = $label;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Sanitize a list of WP slugs.
+	 *
+	 * @param mixed $value Raw list.
+	 * @return list<string>
+	 */
+	private static function sanitize_key_list( $value ): array {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( $value as $item ) {
+			$key = sanitize_key( (string) $item );
+			if ( '' !== $key ) {
+				$out[] = $key;
+			}
+		}
+
+		return array_values( array_unique( $out ) );
 	}
 }

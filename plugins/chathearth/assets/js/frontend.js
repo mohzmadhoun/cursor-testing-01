@@ -408,6 +408,8 @@
                         messages.push({
                             role: "assistant",
                             content: result.data.reply,
+                            sources: result.data.sources || [],
+                            products: result.data.products || [],
                         });
                     }
                     saveMessages();
@@ -464,6 +466,10 @@
                     bubble.textContent = m.content;
                 }
                 row.appendChild(bubble);
+                if (m.role === "assistant") {
+                    appendSources(row, m.sources);
+                    appendProducts(row, m.products);
+                }
                 list.appendChild(row);
             });
 
@@ -519,7 +525,7 @@
                 '<code class="chathearth-md-code">$1</code>',
             );
             source = source.replace(
-                /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g,
                 '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
             );
             source = source.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -598,6 +604,34 @@
                     continue;
                 }
 
+                if (isTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+                    var tableRows = [];
+                    while (i < lines.length && isTableRow(lines[i])) {
+                        if (isTableSeparator(lines[i])) {
+                            i++;
+                            continue;
+                        }
+                        tableRows.push(parseTableRow(lines[i]));
+                        i++;
+                    }
+                    if (tableRows.length) {
+                        var head = tableRows.shift();
+                        var body = tableRows
+                            .map(function (cells) {
+                                return "<tr>" + cells.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+                            })
+                            .join("");
+                        out.push(
+                            '<table class="chathearth-md-table"><thead><tr>' +
+                                head.map(function (c) { return "<th>" + c + "</th>"; }).join("") +
+                                "</tr></thead><tbody>" +
+                                body +
+                                "</tbody></table>"
+                        );
+                    }
+                    continue;
+                }
+
                 if (/^<(?:h[34]|pre)\b/.test(line.trim())) {
                     out.push(line);
                     i++;
@@ -617,7 +651,7 @@
                         next.trim() === "" ||
                         /^[-*] /.test(next) ||
                         /^\d+\. /.test(next) ||
-                        /^<(?:h[34]|pre|ul|ol)\b/.test(next.trim())
+                        /^<(?:h[34]|pre|ul|ol|table)\b/.test(next.trim())
                     ) {
                         break;
                     }
@@ -630,6 +664,161 @@
             }
 
             return out.join("");
+        }
+
+        function isTableRow(line) {
+            return /^\s*\|.+\|\s*$/.test(String(line || ""));
+        }
+
+        function isTableSeparator(line) {
+            return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(String(line || ""));
+        }
+
+        function parseTableRow(line) {
+            return String(line || "")
+                .trim()
+                .replace(/^\|/, "")
+                .replace(/\|$/, "")
+                .split("|")
+                .map(function (cell) {
+                    return cell.trim();
+                });
+        }
+
+        function appendSources(row, sources) {
+            if (!sources || !sources.length) {
+                return;
+            }
+            var wrap = document.createElement("div");
+            wrap.className = "chathearth-sources";
+            var label = document.createElement("span");
+            label.className = "chathearth-sources-label";
+            label.textContent = (cfg.i18n && cfg.i18n.sources) || "Sources";
+            wrap.appendChild(label);
+            sources.forEach(function (src) {
+                if (!src || !src.url) {
+                    return;
+                }
+                var a = document.createElement("a");
+                a.href = src.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "chathearth-source-chip";
+                a.textContent = src.title || src.url;
+                wrap.appendChild(a);
+            });
+            row.appendChild(wrap);
+        }
+
+        function appendProducts(row, products) {
+            if (!cfg.woocommerce || !products || !products.length) {
+                return;
+            }
+            var wrap = document.createElement("div");
+            wrap.className = "chathearth-products";
+            products.forEach(function (product) {
+                var card = document.createElement("div");
+                card.className = "chathearth-product";
+                var name = document.createElement("a");
+                name.href = product.url || "#";
+                name.target = "_blank";
+                name.rel = "noopener noreferrer";
+                name.textContent = product.name || "Product";
+                card.appendChild(name);
+                if (product.price) {
+                    var price = document.createElement("span");
+                    price.className = "chathearth-product-price";
+                    price.textContent = product.price;
+                    card.appendChild(price);
+                }
+                if (product.purchasable) {
+                    var btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "chathearth-add-cart";
+                    btn.textContent = (cfg.i18n && cfg.i18n.addToCart) || "Add to cart";
+                    btn.addEventListener("click", function () {
+                        addToCart(product, btn, wrap);
+                    });
+                    card.appendChild(btn);
+                }
+                wrap.appendChild(card);
+            });
+            if (products.length >= 2) {
+                var compare = document.createElement("button");
+                compare.type = "button";
+                compare.className = "chathearth-compare";
+                compare.textContent = (cfg.i18n && cfg.i18n.compareThese) || "Compare these products";
+                compare.addEventListener("click", function () {
+                    var names = products
+                        .map(function (p) {
+                            return p.name || ("product " + p.id);
+                        })
+                        .join(" vs ");
+                    sendMessage(
+                        "Compare " +
+                            names +
+                            " in a markdown table covering price, stock, and key differences. Use only catalog facts and include product links."
+                    );
+                });
+                wrap.appendChild(compare);
+            }
+            row.appendChild(wrap);
+        }
+
+        function addToCart(product, button, wrap) {
+            if (!cfg.cartUrl) {
+                return;
+            }
+            button.disabled = true;
+            fetch(cfg.cartUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-WP-Nonce": cfg.nonce,
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: 1,
+                }),
+            })
+                .then(function (res) {
+                    return res.json().then(function (data) {
+                        return { ok: res.ok, data: data };
+                    });
+                })
+                .then(function (result) {
+                    button.disabled = false;
+                    var note = wrap.querySelector(".chathearth-cart-note");
+                    if (!note) {
+                        note = document.createElement("p");
+                        note.className = "chathearth-cart-note";
+                        wrap.appendChild(note);
+                    }
+                    if (!result.ok) {
+                        note.textContent = (cfg.i18n && cfg.i18n.cartError) || "Could not add that product to the cart.";
+                        return;
+                    }
+                    var cartUrl = (result.data && result.data.cart_url) || cfg.storeCartUrl;
+                    var checkoutUrl = (result.data && result.data.checkout_url) || cfg.storeCheckoutUrl;
+                    note.innerHTML =
+                        escapeHtml((cfg.i18n && cfg.i18n.addedToCart) || "Added to cart.") +
+                        ' <a href="' +
+                        escapeHtml(cartUrl) +
+                        '">' +
+                        escapeHtml((cfg.i18n && cfg.i18n.viewCart) || "View cart") +
+                        "</a>" +
+                        (checkoutUrl
+                            ? ' · <a href="' +
+                              escapeHtml(checkoutUrl) +
+                              '">' +
+                              escapeHtml((cfg.i18n && cfg.i18n.checkout) || "Checkout") +
+                              "</a>"
+                            : "");
+                })
+                .catch(function () {
+                    button.disabled = false;
+                });
         }
 
         function loadMessages() {
@@ -652,6 +841,8 @@
                         role: m.role,
                         content: m.content,
                         localOnly: !!m.localOnly,
+                        sources: m.sources || [],
+                        products: m.products || [],
                     };
                 });
                 localStorage.setItem(cfg.storageKey, JSON.stringify(toStore));

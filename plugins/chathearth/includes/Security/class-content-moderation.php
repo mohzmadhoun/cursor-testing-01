@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use ChatHearth\Ai\Openai_Credentials;
 use ChatHearth\Logger;
 use ChatHearth\Options;
 use ChatHearth\Plugin;
@@ -227,25 +228,7 @@ final class Content_Moderation {
 	 * Resolve OpenAI API key from the AI Client registry (never reads Connectors options directly).
 	 */
 	private function resolve_openai_api_key(): string {
-		if ( ! class_exists( '\\WordPress\\AiClient\\AiClient' ) ) {
-			return '';
-		}
-
-		try {
-			$registry = \WordPress\AiClient\AiClient::defaultRegistry();
-			$auth     = $registry->getProviderRequestAuthentication( 'openai' );
-			if ( ! $auth instanceof \WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication ) {
-				return '';
-			}
-			$key = $auth->getApiKey();
-			return trim( $key );
-		} catch ( \Throwable $e ) {
-			Logger::error(
-				'OpenAI moderation key resolve failed.',
-				array( 'error' => $e->getMessage() )
-			);
-			return '';
-		}
+		return Openai_Credentials::api_key();
 	}
 
 	/**

@@ -26,3 +26,31 @@
 	margin: 0 0 8px;
 	border-left-color: #00a32a;
 }
+
+.chathearth-settings .chathearth-check-row {
+	display: block;
+	margin: 0 0 6px;
+}
+
+.chathearth-settings .chathearth-inline-label {
+	margin-left: 16px;
+}
+
+.chathearth-settings .chathearth-kb-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.chathearth-settings .chathearth-kb-status {
+	font-style: italic;
+}
+
+.chathearth-settings .chathearth-kb-entries-wrap {
+	margin-top: 16px;
+}
+
+.chathearth-settings .chathearth-kb-pager {
+	margin-top: 8px;
+}

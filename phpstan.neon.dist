@@ -7,6 +7,7 @@ parameters:
 		- plugins
 	bootstrapFiles:
 		- bin/phpstan-bootstrap.php
+		- bin/phpstan-woocommerce-stubs.php
 	scanFiles:
 		- /var/www/wordpress/wp-includes/ai-client.php
 		- /var/www/wordpress/wp-includes/ai-client/class-wp-ai-client-prompt-builder.php
