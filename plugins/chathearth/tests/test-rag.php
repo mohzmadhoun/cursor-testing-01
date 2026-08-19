@@ -5,6 +5,7 @@
  * @package ChatHearth
  */
 
+use ChatHearth\Commerce\Product_Catalog;
 use ChatHearth\Options;
 use ChatHearth\Rag\Builtin_Vector_Store;
 use ChatHearth\Rag\Chunker;
@@ -182,6 +183,13 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$sources = Retriever::instance()->last_sources();
 		$this->assertNotEmpty( $sources );
 		$this->assertSame( 'https://example.test/contact', $sources[0]['url'] );
+	}
+
+	public function test_product_name_mention_matching() {
+		$this->assertTrue( Product_Catalog::message_mentions_name( 'Compare Shirt vs Jacket', 'Shirt' ) );
+		$this->assertTrue( Product_Catalog::message_mentions_name( 'Compare Shirt vs Jacket', 'Jacket' ) );
+		$this->assertFalse( Product_Catalog::message_mentions_name( 'I like tshirts', 'Shirt' ) );
+		$this->assertFalse( Product_Catalog::message_mentions_name( 'Hello there', 'Hi' ) );
 	}
 
 	public function test_kb_rest_requires_manage_options() {

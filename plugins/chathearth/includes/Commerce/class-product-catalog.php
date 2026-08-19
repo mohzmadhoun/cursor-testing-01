@@ -82,4 +82,71 @@ final class Product_Catalog {
 			'variations'  => $variations,
 		);
 	}
+
+	/**
+	 * Public products whose names appear in a visitor message.
+	 *
+	 * Used so comparison and add-to-cart cards can appear even when RAG is off
+	 * or retrieval did not return product chunks.
+	 *
+	 * @param string $message Visitor message.
+	 * @param int    $limit   Max products.
+	 * @return list<array<string, mixed>>
+	 */
+	public function find_mentioned( string $message, int $limit = 6 ): array {
+		if ( ! self::is_available() || ! function_exists( 'wc_get_products' ) ) {
+			return array();
+		}
+
+		$message = trim( $message );
+		if ( '' === $message ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 12, $limit ) );
+		$ids   = wc_get_products(
+			array(
+				'status' => 'publish',
+				'limit'  => 80,
+				'return' => 'ids',
+			)
+		);
+		if ( ! is_array( $ids ) ) {
+			return array();
+		}
+
+		$found = array();
+		foreach ( $ids as $id ) {
+			$card = $this->get_public_product( (int) $id );
+			if ( ! is_array( $card ) ) {
+				continue;
+			}
+			$name = isset( $card['name'] ) ? (string) $card['name'] : '';
+			if ( ! self::message_mentions_name( $message, $name ) ) {
+				continue;
+			}
+			$found[ (int) $id ] = $card;
+			if ( count( $found ) >= $limit ) {
+				break;
+			}
+		}
+
+		return array_values( $found );
+	}
+
+	/**
+	 * Whether a product name appears as a whole token in the message.
+	 *
+	 * @param string $message Visitor message.
+	 * @param string $name    Product name.
+	 */
+	public static function message_mentions_name( string $message, string $name ): bool {
+		$name = trim( $name );
+		if ( mb_strlen( $name, 'UTF-8' ) < 3 ) {
+			return false;
+		}
+
+		$pattern = '/(?<!\p{L})' . preg_quote( $name, '/' ) . '(?!\p{L})/iu';
+		return (bool) preg_match( $pattern, $message );
+	}
 }

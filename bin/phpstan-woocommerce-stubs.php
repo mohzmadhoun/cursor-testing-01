@@ -72,6 +72,19 @@ if ( ! function_exists( 'WC' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_get_products' ) ) {
+	/**
+	 * Product query.
+	 *
+	 * @param array<string, mixed> $args Query args.
+	 * @return array<int, mixed>
+	 */
+	function wc_get_products( $args = array() ) {
+		unset( $args );
+		return array();
+	}
+}
+
 if ( ! function_exists( 'wc_get_product' ) ) {
 	/**
 	 * Product factory.

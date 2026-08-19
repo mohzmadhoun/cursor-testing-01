@@ -79,7 +79,7 @@ final class Retriever {
 	}
 
 	/**
-	 * Inject retrieved context when RAG is enabled.
+	 * Inject retrieved context and matching catalog products.
 	 *
 	 * @param string               $prompt  System prompt.
 	 * @param string               $message User message.
@@ -87,60 +87,90 @@ final class Retriever {
 	 */
 	public function inject( string $prompt, string $message, array $history ): string {
 		unset( $history );
+		$catalog             = new Product_Catalog();
+		$products            = array();
 		$this->last_sources  = array();
 		$this->last_products = array();
 
-		if ( ! Options::is_rag_enabled() ) {
-			return $prompt;
+		foreach ( $catalog->find_mentioned( $message ) as $card ) {
+			$products[ (int) $card['id'] ] = $card;
 		}
 
-		$hits = $this->search( $message );
-		if ( empty( $hits ) ) {
-			$prompt .= "\n\n## Retrieved knowledge\nNo matching knowledge-base passages were found. Stay within the website context above. If you cannot answer from that context, say so.\n";
-			return $prompt;
-		}
+		if ( Options::is_rag_enabled() ) {
+			$hits = $this->search( $message );
+			if ( empty( $hits ) ) {
+				$prompt .= "\n\n## Retrieved knowledge\nNo matching knowledge-base passages were found. Stay within the website context above. If you cannot answer from that context, say so.\n";
+			} else {
+				$blocks  = array();
+				$sources = array();
 
-		$blocks   = array();
-		$sources  = array();
-		$products = array();
-		$catalog  = new Product_Catalog();
+				foreach ( $hits as $hit ) {
+					$meta  = $hit['meta'];
+					$title = isset( $meta['title'] ) ? (string) $meta['title'] : '';
+					$url   = isset( $meta['url'] ) ? (string) $meta['url'] : '';
+					$type  = isset( $meta['post_type'] ) && '' !== (string) $meta['post_type'] ? (string) $meta['post_type'] : (string) ( $meta['object_type'] ?? 'content' );
 
-		foreach ( $hits as $hit ) {
-			$meta  = $hit['meta'];
-			$title = isset( $meta['title'] ) ? (string) $meta['title'] : '';
-			$url   = isset( $meta['url'] ) ? (string) $meta['url'] : '';
-			$type  = isset( $meta['post_type'] ) && '' !== (string) $meta['post_type'] ? (string) $meta['post_type'] : (string) ( $meta['object_type'] ?? 'content' );
+					if ( '' !== $url && ! isset( $sources[ $url ] ) ) {
+						$sources[ $url ] = array(
+							'title' => $title,
+							'url'   => $url,
+							'type'  => $type,
+						);
+					}
 
-			if ( '' !== $url && ! isset( $sources[ $url ] ) ) {
-				$sources[ $url ] = array(
-					'title' => $title,
-					'url'   => $url,
-					'type'  => $type,
-				);
-			}
+					$object_id = isset( $meta['object_id'] ) ? (int) $meta['object_id'] : 0;
+					if ( $object_id > 0 && ( 'product' === $type || ( isset( $meta['post_type'] ) && 'product' === $meta['post_type'] ) ) ) {
+						$product = $catalog->get_public_product( $object_id );
+						if ( is_array( $product ) ) {
+							$products[ $object_id ] = $product;
+						}
+					}
 
-			$object_id = isset( $meta['object_id'] ) ? (int) $meta['object_id'] : 0;
-			if ( $object_id > 0 && ( 'product' === $type || ( isset( $meta['post_type'] ) && 'product' === $meta['post_type'] ) ) ) {
-				$product = $catalog->get_public_product( $object_id );
-				if ( is_array( $product ) ) {
-					$products[ $object_id ] = $product;
+					$blocks[] = '### ' . ( '' !== $title ? $title : 'Source' ) . "\n" . ( '' !== $url ? 'URL: ' . $url . "\n" : '' ) . trim( (string) $hit['content'] );
 				}
+
+				$this->last_sources = array_values( $sources );
+
+				$joined = implode( "\n\n---\n\n", $blocks );
+				if ( mb_strlen( $joined, 'UTF-8' ) > 12000 ) {
+					$joined = mb_substr( $joined, 0, 12000, 'UTF-8' );
+				}
+
+				$prompt .= "\n\n## Retrieved knowledge\nUse the following passages from this website. Cite them with Markdown links. If they are not enough, say you do not have that information.\n\n" . $joined . "\n";
 			}
-
-			$blocks[] = '### ' . ( '' !== $title ? $title : 'Source' ) . "\n" . ( '' !== $url ? 'URL: ' . $url . "\n" : '' ) . trim( (string) $hit['content'] );
 		}
 
-		$this->last_sources  = array_values( $sources );
 		$this->last_products = array_values( $products );
-
-		$joined = implode( "\n\n---\n\n", $blocks );
-		if ( mb_strlen( $joined, 'UTF-8' ) > 12000 ) {
-			$joined = mb_substr( $joined, 0, 12000, 'UTF-8' );
-		}
-
-		$prompt .= "\n\n## Retrieved knowledge\nUse the following passages from this website. Cite them with Markdown links. If they are not enough, say you do not have that information.\n\n" . $joined . "\n";
+		$prompt             .= $this->catalog_prompt( $this->last_products );
 
 		return $prompt;
+	}
+
+	/**
+	 * Compact catalog facts for comparison and cart.
+	 *
+	 * @param list<array<string, mixed>> $products Products.
+	 */
+	private function catalog_prompt( array $products ): string {
+		if ( empty( $products ) ) {
+			return '';
+		}
+
+		$lines = array(
+			"\n\n## Matching catalog products",
+			'Use these facts for comparisons and cart actions. Include Markdown links. Do not invent prices or stock.',
+		);
+		foreach ( $products as $product ) {
+			$name    = isset( $product['name'] ) ? (string) $product['name'] : 'Product';
+			$url     = isset( $product['url'] ) ? (string) $product['url'] : '';
+			$price   = isset( $product['price'] ) ? (string) $product['price'] : '';
+			$stock   = ! empty( $product['in_stock'] ) ? 'in stock' : 'out of stock';
+			$buy     = ! empty( $product['purchasable'] ) ? 'can be added to cart' : 'cannot be added to cart from chat';
+			$label   = '' !== $url ? '[' . $name . '](' . $url . ')' : $name;
+			$lines[] = '- ' . $label . ' — ' . $price . ' — ' . $stock . ' — ' . $buy;
+		}
+
+		return implode( "\n", $lines ) . "\n";
 	}
 
 	/**
