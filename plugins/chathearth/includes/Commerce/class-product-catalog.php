@@ -111,9 +111,6 @@ final class Product_Catalog {
 				'return' => 'ids',
 			)
 		);
-		if ( ! is_array( $ids ) ) {
-			return array();
-		}
 
 		$found = array();
 		foreach ( $ids as $id ) {
