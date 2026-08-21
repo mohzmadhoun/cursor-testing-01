@@ -60,7 +60,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 
 | Check | Result |
 | --- | --- |
-| `composer check` | PHPCS clean; PHPStan level 5 clean; 36 tests / 82 assertions (ChatHearth 18 tests, 58 assertions). PHPUnit injects vectors via `chathearth_pre_embed` and does not call OpenAI. |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 38 tests / 92 assertions (ChatHearth 20 tests, 68 assertions). PHPUnit injects vectors via `chathearth_pre_embed` and does not call OpenAI. |
 | Live KB | 29 entries indexed (pages, posts, sample products, terms, `site:identity`, `site:woocommerce`) on the builtin store |
 | Incremental index | Editing Sample Page (`post:2`) set only that `source_id` to `pending`, then `indexed` after `process_queue`; unchanged markdown hash-skipped |
 | Include/exclude | `post:34` excluded (vectors dropped) then re-included and reindexed |
@@ -101,7 +101,8 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - `1760204` Document the chat window size animation
 - `a717512` Clarify local Chroma files and improve store ping errors
 - `c83cdad` Document local Chroma persist files versus HTTP
-- `_this entry_` Store RAG embeddings in the WordPress database only
+- `437de05` Store ChatHearth RAG embeddings in the WordPress database only
+- `_this entry_` Record WordPress-only RAG store verification
 
 ---
 
