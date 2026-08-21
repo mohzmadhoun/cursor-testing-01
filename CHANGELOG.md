@@ -43,6 +43,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - Always-on website grounding on `chathearth_system_prompt` (priority 5), including off-topic refusal even when RAG retrieval is off.
 - Chat REST extras: `sources[]`, `products[]`, `commerce` cart/checkout URLs; `POST /chathearth/v1/cart` with the same `wp_rest` nonce.
 - Widget UI: source chips, product cards, Compare these products, Add to cart, Markdown tables, and links to matching pages/posts/products.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.4.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
 
 ### Changed
 
@@ -77,6 +78,7 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 | Expand / restore | Header doubles the panel; restore returns original size; only one of the two controls is visible |
 | Smooth resize | Width and height ease over ~0.4s in both directions; no snap or flicker |
 | WordPress-only store | Knowledge Base has no Chroma/Pinecone fields; Test knowledge base reports the WordPress-database store |
+| Installable zip | `exported-plugins/chathearth-1.4.4.zip` extracts to `chathearth/chathearth.php` version 1.4.4; `unzip -t` clean; tests/plan/phpunit not packed |
 | Runtime logs | Only earlier WP-CLI eval mistakes (`Repository` vs `Kb_Repository`); no widget/REST errors |
 
 ### Notes
