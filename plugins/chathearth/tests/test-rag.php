@@ -212,7 +212,7 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 	public function test_rag_settings_sanitize_store_and_limits() {
 		$settings = Options::sanitize(
 			array(
-				'rag_vector_store' => 'pinecone',
+				'rag_vector_store' => 'chroma',
 				'rag_enabled'      => '1',
 				'rag_top_k'        => 99,
 				'rag_chunk_size'   => 10,
@@ -221,10 +221,31 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $settings['rag_enabled'] );
-		$this->assertSame( 'pinecone', $settings['rag_vector_store'] );
+		$this->assertSame( 'builtin', $settings['rag_vector_store'] );
+		$this->assertArrayNotHasKey( 'rag_chroma_url', $settings );
+		$this->assertArrayNotHasKey( 'rag_pinecone_api_key', $settings );
 		$this->assertSame( 12, $settings['rag_top_k'] );
 		$this->assertSame( 400, $settings['rag_chunk_size'] );
 		$this->assertSame( array( 'page', 'notvalid' ), $settings['rag_post_types'] );
+	}
+
+	public function test_maybe_use_wordpress_vector_store_strips_external_keys() {
+		update_option(
+			Options::OPTION_KEY,
+			array(
+				'rag_vector_store'     => 'chroma',
+				'rag_chroma_url'       => 'http://127.0.0.1:8000',
+				'rag_pinecone_api_key' => 'secret',
+			)
+		);
+
+		Options::maybe_use_wordpress_vector_store();
+
+		$stored = get_option( Options::OPTION_KEY );
+		$this->assertIsArray( $stored );
+		$this->assertSame( 'builtin', $stored['rag_vector_store'] );
+		$this->assertArrayNotHasKey( 'rag_chroma_url', $stored );
+		$this->assertArrayNotHasKey( 'rag_pinecone_api_key', $stored );
 	}
 
 	public function test_rest_routes_include_kb_and_cart() {
@@ -237,19 +258,11 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/chathearth/v1/cart', $routes );
 	}
 
-	public function test_chroma_ping_explains_missing_http_server() {
-		$store  = new \ChatHearth\Rag\Chroma_Vector_Store( 'http://127.0.0.1:59999' );
-		$status = $store->ping_status();
-
-		$this->assertFalse( $status['ok'] );
-		$this->assertStringContainsString( 'Chroma', $status['message'] );
-		$this->assertStringContainsString( 'HTTP', $status['message'] );
-	}
-
 	public function test_builtin_ping_status_is_ready() {
-		$status = Vector_Store_Factory::ping_status( 'builtin' );
+		$status = Vector_Store_Factory::ping_status();
 
 		$this->assertTrue( $status['ok'] );
 		$this->assertSame( 'builtin', $status['store'] );
+		$this->assertStringContainsString( 'WordPress database', $status['message'] );
 	}
 }

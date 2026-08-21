@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.3** — RAG knowledge base, always-on website grounding, product comparison, and add-to-cart from chat.
+**v1.4.4** — RAG knowledge base (WordPress database only), always-on website grounding, product comparison, and add-to-cart from chat.
 
 ## Requirements (v1)
 
@@ -25,7 +25,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 - Non-streaming replies: typing indicator, then the full answer (Markdown rendered in the popup, including tables)
 - Conversation history in **`localStorage`** (survives refresh)
 - Always-on **website grounding**: answers stay on this site even when RAG is off
-- **Knowledge Base (RAG):** export pages, posts, custom post types, products, and taxonomies to markdown; choose Chroma, Pinecone, or the WordPress-database store; incremental reindex
+- **Knowledge Base (RAG):** export pages, posts, custom post types, products, and taxonomies to markdown; store embeddings in the WordPress database; incremental reindex
 - **Store chat:** compare products from catalog facts; add purchasable products to the WooCommerce cart from the widget
 
 ## Protection
@@ -101,21 +101,9 @@ Response: `{ "reply": "...", "sources": [ { "title", "url", "type" } ], "product
 
 Knowledge Base admin REST (`manage_options`): `/kb/sync`, `/kb/status`, `/kb/entries`, `/kb/ping`.
 
-### Local Chroma on this WordPress server
+### Knowledge base storage
 
-PHP cannot open a Chroma SQLite/parquet folder. ChatHearth talks to **Chroma over HTTP**. You can still keep the data files on the same machine:
-
-1. Install Chroma (`pip install chromadb` in a venv).
-2. Start it with a persist directory, for example:
-
-```bash
-plugins/chathearth/bin/run-chroma.sh
-```
-
-That writes files under `wp-content/uploads/chathearth/chroma/` (not publicly listable) and listens on `http://127.0.0.1:8000`.
-3. In **Settings → ChatHearth → Knowledge Base**, choose **Chroma (self-hosted HTTP)**, set the URL to `http://127.0.0.1:8000`, save, then **Test vector store** and **Sync now**.
-
-If you do not want to run a Chroma process, use **Local (WordPress database)**.
+RAG embeddings live in this site's WordPress database (`wp_chathearth_kb_chunks`). The plugin zip is enough: no Python, Chroma process, Pinecone account, or other server software. The `chathearth_vector_store` filter remains for developers who implement a custom PHP store.
 
 ## Documentation
 
@@ -136,7 +124,7 @@ If you do not want to run a Chroma process, use **Local (WordPress database)**.
 - Server-side conversation history
 - **CAPTCHA:** Cloudflare Turnstile, hCaptcha, and Google reCAPTCHA **v3** (v2 is already optional when keys are set)
 - **Evaluation and observability:** tokens/cost monitoring, hard cost ceilings with admin escalation, latency SLOs, quality/RAG evaluation, hallucination detection, explainability, transparency, and controllability (see the metrics doc above)
-- **RAG:** enable retrieval; markdown from selected site content; Chroma, Pinecone, or WordPress-database vectors; comparison answers; add to cart from chat
+- **RAG:** enable retrieval; markdown from selected site content; WordPress-database vectors; comparison answers; add to cart from chat
 - N8N webhook for custom agents / alternate RAG or AI routing
 
 ## License

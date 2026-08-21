@@ -59,13 +59,6 @@ final class Options {
 			'moderation_block_message'          => 'Sorry, that message cannot be processed. Please rephrase and try again.',
 			'rag_enabled'                       => false,
 			'rag_vector_store'                  => 'builtin',
-			'rag_chroma_url'                    => 'http://127.0.0.1:8000',
-			'rag_chroma_collection'             => 'chathearth',
-			'rag_chroma_tenant'                 => 'default_tenant',
-			'rag_chroma_database'               => 'default_database',
-			'rag_pinecone_api_key'              => '',
-			'rag_pinecone_host'                 => '',
-			'rag_pinecone_namespace'            => '',
 			'rag_post_types'                    => array( 'post', 'page', 'product' ),
 			'rag_taxonomies'                    => array( 'category', 'post_tag', 'product_cat', 'product_tag' ),
 			'rag_include_site_identity'         => true,
@@ -86,7 +79,40 @@ final class Options {
 			$stored = array();
 		}
 
-		return array_merge( self::defaults(), $stored );
+		$merged                     = array_merge( self::defaults(), $stored );
+		$merged['rag_vector_store'] = 'builtin';
+		foreach ( self::retired_vector_store_keys() as $retired ) {
+			unset( $merged[ $retired ] );
+		}
+
+		return $merged;
+	}
+
+	/**
+	 * Drop Chroma/Pinecone settings so RAG never depends on extra servers.
+	 */
+	public static function maybe_use_wordpress_vector_store(): void {
+		$stored = get_option( self::OPTION_KEY, false );
+		if ( ! is_array( $stored ) ) {
+			return;
+		}
+
+		$changed = false;
+		if ( ( $stored['rag_vector_store'] ?? 'builtin' ) !== 'builtin' ) {
+			$stored['rag_vector_store'] = 'builtin';
+			$changed                    = true;
+		}
+
+		foreach ( self::retired_vector_store_keys() as $key ) {
+			if ( array_key_exists( $key, $stored ) ) {
+				unset( $stored[ $key ] );
+				$changed = true;
+			}
+		}
+
+		if ( $changed ) {
+			update_option( self::OPTION_KEY, $stored );
+		}
 	}
 
 	/**
@@ -317,46 +343,7 @@ final class Options {
 		if ( isset( $input['rag_vector_store'] ) ) {
 			$out['rag_enabled'] = ! empty( $input['rag_enabled'] );
 
-			$store                   = sanitize_key( (string) $input['rag_vector_store'] );
-			$out['rag_vector_store'] = in_array( $store, array( 'builtin', 'chroma', 'pinecone' ), true ) ? $store : 'builtin';
-
-			if ( isset( $input['rag_chroma_url'] ) ) {
-				$url                   = esc_url_raw( trim( (string) $input['rag_chroma_url'] ) );
-				$out['rag_chroma_url'] = '' !== $url ? untrailingslashit( $url ) : (string) $defaults['rag_chroma_url'];
-			}
-
-			if ( isset( $input['rag_chroma_collection'] ) ) {
-				$collection                   = sanitize_text_field( (string) $input['rag_chroma_collection'] );
-				$out['rag_chroma_collection'] = '' !== $collection ? $collection : (string) $defaults['rag_chroma_collection'];
-			}
-
-			if ( isset( $input['rag_chroma_tenant'] ) ) {
-				$tenant                   = sanitize_text_field( (string) $input['rag_chroma_tenant'] );
-				$out['rag_chroma_tenant'] = '' !== $tenant ? $tenant : (string) $defaults['rag_chroma_tenant'];
-			}
-
-			if ( isset( $input['rag_chroma_database'] ) ) {
-				$database                   = sanitize_text_field( (string) $input['rag_chroma_database'] );
-				$out['rag_chroma_database'] = '' !== $database ? $database : (string) $defaults['rag_chroma_database'];
-			}
-
-			if ( ! empty( $input['rag_pinecone_clear_key'] ) ) {
-				$out['rag_pinecone_api_key'] = '';
-			} elseif ( isset( $input['rag_pinecone_api_key'] ) ) {
-				$key = trim( (string) $input['rag_pinecone_api_key'] );
-				if ( '' !== $key ) {
-					$out['rag_pinecone_api_key'] = sanitize_text_field( $key );
-				}
-			}
-
-			if ( isset( $input['rag_pinecone_host'] ) ) {
-				$host                     = esc_url_raw( trim( (string) $input['rag_pinecone_host'] ) );
-				$out['rag_pinecone_host'] = '' !== $host ? untrailingslashit( $host ) : '';
-			}
-
-			if ( isset( $input['rag_pinecone_namespace'] ) ) {
-				$out['rag_pinecone_namespace'] = sanitize_text_field( (string) $input['rag_pinecone_namespace'] );
-			}
+			$out['rag_vector_store'] = 'builtin';
 
 			$out['rag_post_types'] = self::sanitize_key_list( $input['rag_post_types'] ?? array() );
 			$out['rag_taxonomies'] = self::sanitize_key_list( $input['rag_taxonomies'] ?? array() );
@@ -448,6 +435,23 @@ final class Options {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Settings keys for stores that required extra software or accounts.
+	 *
+	 * @return list<string>
+	 */
+	private static function retired_vector_store_keys(): array {
+		return array(
+			'rag_chroma_url',
+			'rag_chroma_collection',
+			'rag_chroma_tenant',
+			'rag_chroma_database',
+			'rag_pinecone_api_key',
+			'rag_pinecone_host',
+			'rag_pinecone_namespace',
+		);
 	}
 
 	/**

@@ -105,7 +105,7 @@ final class Schema {
 	}
 
 	/**
-	 * Plugin-owned uploads root (markdown + optional local Chroma files).
+	 * Plugin-owned uploads root for generated markdown.
 	 */
 	public static function plugin_upload_dir(): string {
 		$uploads = wp_upload_dir();
@@ -122,21 +122,11 @@ final class Schema {
 	}
 
 	/**
-	 * Persist directory for a Chroma server running on this host.
-	 *
-	 * WordPress does not read these files itself. A Chroma HTTP process writes them.
-	 */
-	public static function chroma_dir(): string {
-		return trailingslashit( self::plugin_upload_dir() ) . 'chroma';
-	}
-
-	/**
 	 * Create the markdown directory and deny public listing.
 	 */
 	public static function ensure_upload_dir(): void {
 		self::protect_dir( self::plugin_upload_dir() );
 		self::protect_dir( self::upload_dir() );
-		self::protect_dir( self::chroma_dir() );
 	}
 
 	/**

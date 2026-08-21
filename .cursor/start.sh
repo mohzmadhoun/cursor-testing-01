@@ -22,8 +22,6 @@ ensure_htaccess
 
 start_apache
 
-start_local_chroma || warn "Local Chroma did not start (optional; ChatHearth can use the WordPress-database store)."
-
 # Cached rewrite rules and object-cache state can reference plugins that this
 # revision no longer provides.
 wp_cli rewrite flush >/dev/null 2>&1 || true

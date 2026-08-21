@@ -80,18 +80,6 @@ final class Kb_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_ping' ),
 				'permission_callback' => array( $this, 'can_manage' ),
-				'args'                => array(
-					'store'      => array(
-						'required'          => false,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_key',
-					),
-					'chroma_url' => array(
-						'required'          => false,
-						'type'              => 'string',
-						'sanitize_callback' => 'esc_url_raw',
-					),
-				),
 			)
 		);
 	}
@@ -150,7 +138,7 @@ final class Kb_Controller {
 				'counts'   => $repo->status_counts(),
 				'pending'  => $repo->has_pending(),
 				'store_ok' => Vector_Store_Factory::make()->ping(),
-				'store'    => (string) \ChatHearth\Options::get( 'rag_vector_store', 'builtin' ),
+				'store'    => 'builtin',
 			),
 			200
 		);
@@ -215,9 +203,8 @@ final class Kb_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function handle_ping( WP_REST_Request $request ) {
-		$driver = sanitize_key( (string) $request->get_param( 'store' ) );
-		$url    = (string) $request->get_param( 'chroma_url' );
-		$status = Vector_Store_Factory::ping_status( $driver, $url );
+		unset( $request );
+		$status = Vector_Store_Factory::ping_status();
 
 		return new WP_REST_Response(
 			$status,

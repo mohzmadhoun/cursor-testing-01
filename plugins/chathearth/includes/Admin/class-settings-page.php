@@ -15,8 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ChatHearth\Options;
 use ChatHearth\Plugin;
-use ChatHearth\Rag\Schema;
-use ChatHearth\Rag\Vector_Store_Factory;
 
 /**
  * Registers the ChatHearth - AI Chatbot settings UI.
@@ -134,8 +132,8 @@ final class Settings_Page {
 					'syncFailed' => __( 'Sync failed.', 'chathearth' ),
 					'include'    => __( 'Included', 'chathearth' ),
 					'exclude'    => __( 'Excluded', 'chathearth' ),
-					'pingOk'     => __( 'Vector store reachable.', 'chathearth' ),
-					'pingFail'   => __( 'Vector store is not reachable.', 'chathearth' ),
+					'pingOk'     => __( 'Knowledge base storage is ready.', 'chathearth' ),
+					'pingFail'   => __( 'Knowledge base storage is not ready.', 'chathearth' ),
 					'empty'      => __( 'No knowledge-base entries yet. Save settings, then click Sync now.', 'chathearth' ),
 				),
 			)
@@ -479,9 +477,9 @@ final class Settings_Page {
 		$taxonomies  = Options::available_content_taxonomies();
 		$selected_pt = Options::rag_post_types();
 		$selected_tx = Options::rag_taxonomies();
-		$store       = (string) $settings['rag_vector_store'];
 		?>
 		<div class="chathearth-tab-panel" id="chathearth-tab-knowledge-base" data-tab-panel="knowledge-base" role="tabpanel"<?php echo 'knowledge-base' !== $current_tab ? ' hidden' : ''; ?>>
+			<input type="hidden" name="<?php echo esc_attr( $opt ); ?>[rag_vector_store]" value="builtin" />
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><?php echo esc_html__( 'Enable RAG', 'chathearth' ); ?></th>
@@ -494,67 +492,9 @@ final class Settings_Page {
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="chathearth_rag_store"><?php echo esc_html__( 'Vector store', 'chathearth' ); ?></label></th>
+					<th scope="row"><?php echo esc_html__( 'Storage', 'chathearth' ); ?></th>
 					<td>
-						<select name="<?php echo esc_attr( $opt ); ?>[rag_vector_store]" id="chathearth_rag_store">
-							<?php foreach ( Vector_Store_Factory::drivers() as $driver_id => $driver_label ) : ?>
-								<option value="<?php echo esc_attr( $driver_id ); ?>" <?php selected( $store, $driver_id ); ?>><?php echo esc_html( $driver_label ); ?></option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php echo esc_html__( 'Local (WordPress database) stores vectors on this site and needs no extra process. Chroma is a Python HTTP server (it can run on this same machine and write data files to a folder). Pinecone is a hosted index. WordPress cannot open a Chroma folder by itself.', 'chathearth' ); ?></p>
-					</td>
-				</tr>
-				<tr class="chathearth-store-fields" data-store="chroma">
-					<th scope="row"><label for="chathearth_chroma_url"><?php echo esc_html__( 'Chroma URL', 'chathearth' ); ?></label></th>
-					<td>
-						<input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_url]" id="chathearth_chroma_url" type="url" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_url'] ); ?>" placeholder="http://127.0.0.1:8000" />
-						<p class="description">
-							<?php
-							echo esc_html(
-								sprintf(
-									/* translators: %s: persist directory path */
-									__( 'Chroma must already be running and reachable at this URL (same server is fine, e.g. http://127.0.0.1:8000). Start it with persist files on this host, for example: chroma run --path "%s" --host 127.0.0.1 --port 8000. A helper script is in the plugin folder: bin/run-chroma.sh. Save settings before Sync now.', 'chathearth' ),
-									Schema::chroma_dir()
-								)
-							);
-							?>
-						</p>
-					</td>
-				</tr>
-				<tr class="chathearth-store-fields" data-store="chroma">
-					<th scope="row"><label for="chathearth_chroma_collection"><?php echo esc_html__( 'Chroma collection', 'chathearth' ); ?></label></th>
-					<td>
-						<input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_collection]" id="chathearth_chroma_collection" type="text" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_collection'] ); ?>" />
-						<p class="description">
-							<label><?php echo esc_html__( 'Tenant', 'chathearth' ); ?>
-								<input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_tenant]" type="text" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_tenant'] ); ?>" />
-							</label>
-							<label><?php echo esc_html__( 'Database', 'chathearth' ); ?>
-								<input name="<?php echo esc_attr( $opt ); ?>[rag_chroma_database]" type="text" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_chroma_database'] ); ?>" />
-							</label>
-						</p>
-					</td>
-				</tr>
-				<tr class="chathearth-store-fields" data-store="pinecone">
-					<th scope="row"><label for="chathearth_pinecone_host"><?php echo esc_html__( 'Pinecone index host', 'chathearth' ); ?></label></th>
-					<td>
-						<input name="<?php echo esc_attr( $opt ); ?>[rag_pinecone_host]" id="chathearth_pinecone_host" type="url" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_pinecone_host'] ); ?>" placeholder="https://example.svc.pinecone.io" />
-					</td>
-				</tr>
-				<tr class="chathearth-store-fields" data-store="pinecone">
-					<th scope="row"><label for="chathearth_pinecone_key"><?php echo esc_html__( 'Pinecone API key', 'chathearth' ); ?></label></th>
-					<td>
-						<input name="<?php echo esc_attr( $opt ); ?>[rag_pinecone_api_key]" id="chathearth_pinecone_key" type="password" class="regular-text" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( '' !== (string) $settings['rag_pinecone_api_key'] ? __( '•••••••• (saved — leave blank to keep)', 'chathearth' ) : '' ); ?>" />
-						<p class="description">
-							<label>
-								<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_pinecone_clear_key]" value="1" />
-								<?php echo esc_html__( 'Clear saved Pinecone API key', 'chathearth' ); ?>
-							</label>
-						</p>
-						<p>
-							<label for="chathearth_pinecone_ns"><?php echo esc_html__( 'Namespace (optional)', 'chathearth' ); ?></label>
-							<input name="<?php echo esc_attr( $opt ); ?>[rag_pinecone_namespace]" id="chathearth_pinecone_ns" type="text" class="regular-text" value="<?php echo esc_attr( (string) $settings['rag_pinecone_namespace'] ); ?>" />
-						</p>
+						<p><?php echo esc_html__( "Indexed passages are stored in this site's WordPress database. Installing ChatHearth is enough. No Python, Chroma, Pinecone, or other extra software is required.", 'chathearth' ); ?></p>
 					</td>
 				</tr>
 				<tr>
@@ -606,7 +546,7 @@ final class Settings_Page {
 
 			<div class="chathearth-kb-toolbar">
 				<button type="button" class="button button-primary" id="chathearth-kb-sync"><?php echo esc_html__( 'Sync now', 'chathearth' ); ?></button>
-				<button type="button" class="button" id="chathearth-kb-ping"><?php echo esc_html__( 'Test vector store', 'chathearth' ); ?></button>
+				<button type="button" class="button" id="chathearth-kb-ping"><?php echo esc_html__( 'Test knowledge base', 'chathearth' ); ?></button>
 				<span class="chathearth-kb-status" id="chathearth-kb-status" aria-live="polite"></span>
 			</div>
 			<p class="description" id="chathearth-kb-counts"></p>

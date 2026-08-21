@@ -1,6 +1,6 @@
 ---
 name: ChatHearth Cursor Milestone 01 — RAG, grounding, and chat commerce
-overview: "First RAG release: export selected site content to markdown, admin dashboard to choose what is indexed, incremental reindex of changed entries, vector stores (Chroma or Pinecone, plus a WordPress-database store so indexing works without an extra server), always-on site-grounded system prompt, and frontend comparison plus add-to-cart from chat."
+overview: "First RAG release: export selected site content to markdown, admin dashboard to choose what is indexed, incremental reindex of changed entries, WordPress-database embeddings (no extra server), always-on site-grounded system prompt, and frontend comparison plus add-to-cart from chat."
 todos:
   - id: plan
     content: Record architecture decisions and implementation steps in this file
@@ -15,10 +15,10 @@ todos:
     content: Scan sources, hash-based skip, incremental hooks, WP-Cron queue, embeddings
     status: completed
   - id: vector-stores
-    content: Vector_Store_Interface plus builtin, Chroma, and Pinecone implementations
+    content: Vector_Store_Interface plus WordPress-database cosine search
     status: completed
   - id: admin
-    content: Knowledge Base settings tab — sources, store credentials, sync, per-entry include
+    content: Knowledge Base settings tab — sources, sync, per-entry include
     status: completed
   - id: grounding
     content: Always-on site context + off-topic refusal in the system prompt (RAG on or off)
@@ -46,10 +46,7 @@ v1 already ships the chat widget, OpenAI via Connectors, and filters `chathearth
 1. **Export site content to markdown** for pages, posts, public custom post types, WooCommerce products, taxonomies (core and custom), and other useful store/site identity data.
 2. **Admin dashboard** to choose which post types, taxonomies, and individual entries are in the knowledge base.
 3. **Incremental updates:** when a source changes, regenerate and re-embed **only that entry** (hash skip if the markdown is unchanged). Deletes/trash remove the entry from the store.
-4. **Vector stores the site owner can choose:**
-   - **Chroma** — self-hosted HTTP server (local or private network).
-   - **Pinecone** — managed remote index.
-   - **WordPress database** — built-in cosine search so RAG works on this site without running Chroma. Needed for tests and for hosts that are not ready to operate a vector server. Not a replacement for Chroma at scale.
+4. **WordPress-only vector store:** embeddings live in `wp_chathearth_kb_chunks` with cosine search in PHP. Chroma is a Python HTTP service and cannot run inside a WordPress plugin zip. Pinecone needs an external account and extra settings. Neither is used.
 5. **Always-on grounding:** even when RAG retrieval is off, the system prompt includes main website data (name, tagline, URL, key pages, store facts) and **must refuse** questions that are not about this website.
 6. **Frontend:**
    - Answer questions about pages, posts, products, and other indexed data.
@@ -62,7 +59,7 @@ v1 already ships the chat widget, OpenAI via Connectors, and filters `chathearth
 - Manual KB document upload, version history UI, or N8N.
 - Auto-placing a paid order (payments still happen on WooCommerce checkout). Chat can add to cart and send the visitor to cart/checkout.
 - Streaming replies, extra AI providers, server-side conversation transcripts.
-- Embedding a Chroma server inside WordPress; Chroma is an HTTP client to a host the site owner runs.
+- Extra server software (Python, Chroma, Pinecone) or extra settings beyond the Knowledge Base tab.
 
 ## Architecture
 
@@ -97,9 +94,7 @@ interface Vector_Store_Interface {
 
 | Driver | When to use | How |
 |--------|-------------|-----|
-| `builtin` | Default; no extra server | Embeddings in `wp_chathearth_kb_chunks`; cosine similarity in PHP |
-| `chroma` | Self-hosted Chroma | HTTP to `/api/v2` (fallback `/api/v1`); collection name + base URL |
-| `pinecone` | Managed Pinecone | Upsert/query/delete against the index host; API key stored in plugin settings (blank-on-save keeps existing, same pattern as reCAPTCHA secret) |
+| `builtin` | Always (shipped store) | Embeddings in `wp_chathearth_kb_chunks`; cosine similarity in PHP |
 
 Embeddings: OpenAI `text-embedding-3-small` via the **same Connectors key** already used for chat/moderation (`AiClient` registry). The plugin still does not store the OpenAI key. Tests inject vectors through `chathearth_pre_embed` so PHPUnit never calls the network.
 
@@ -122,7 +117,7 @@ Embeddings: OpenAI `text-embedding-3-small` via the **same Connectors key** alre
 
 **Table `{$wpdb->prefix}chathearth_kb_chunks`**
 
-Chunk text + embedding JSON (builtin store). Remote stores keep chunks locally for hydration and still send vectors to Chroma/Pinecone. Chunk ids: `{source_id}-c{n}`.
+Chunk text + embedding JSON in the WordPress database. Chunk ids: `{source_id}-c{n}`.
 
 **Files:** `wp-content/uploads/chathearth/kb/{sanitized-source-id}.md` with YAML front matter (`id`, `type`, `title`, `url`, `updated`). Directory is not publicly listable.
 
@@ -187,7 +182,7 @@ The model is instructed to use Markdown links and, for comparisons, a GitHub-fla
 New settings tab **Knowledge Base**:
 
 - Enable RAG retrieval.
-- Vector store: WordPress database / Chroma / Pinecone + connection fields.
+- Storage note: WordPress database only (no store picker).
 - Checkboxes: post types (public), taxonomies (public), site identity, WooCommerce store summary.
 - Sync now, counts (pending / indexed / errors), last error (no secrets).
 - Paginated entry list: title, type, URL, status, include toggle.
@@ -198,7 +193,7 @@ Capability: `manage_options`. KB admin REST is that capability; chat and cart st
 
 1. **Options + schema** — new settings keys, `dbDelta` tables, version option, uninstall cleanup (tables, kb files, cron).
 2. **Exporters + chunker** — HTML→markdown, per-source builders, front matter, upload writer.
-3. **Embeddings + stores** — OpenAI embeddings helper (shared credentials with moderation), three store drivers, factory + `chathearth_vector_store` filter.
+3. **Embeddings + store** — OpenAI embeddings helper (shared credentials with moderation), WordPress-database store, factory + `chathearth_vector_store` filter.
 4. **Indexer** — scan, hash skip, hooks, cron worker.
 5. **Admin tab + KB REST** — settings UI, sync, include/exclude.
 6. **Grounding + retriever** — always inject site block; retrieve when enabled; attach sources/products.
@@ -213,20 +208,20 @@ Automated (no paid API in PHPUnit):
 - Chunker splits and overlap.
 - Builtin store upsert/query ranking.
 - Grounding prompt contains site name and refuse rules even if `rag_enabled` is false.
-- Options sanitization for store choice and post-type lists.
+- Options sanitization keeps the WordPress-database store even if another store id is posted.
 - Chat REST still rejects missing nonce; cart REST rejects missing nonce.
 - KB REST requires `manage_options`.
 - Action/reply payload exposes sources array shape.
 
 Manual / environment (this Cloud WordPress site):
 
-- Enable RAG + builtin store, Sync now, confirm pages and sample Woo products appear as indexed.
+- Enable RAG, Sync now, confirm pages and sample Woo products appear as indexed.
 - Ask an off-topic question with RAG **off** — model should refuse and stay on-site.
 - Ask about a page/post — reply includes a link.
 - Ask to compare two in-stock products — structured comparison from catalog data.
 - Add a product to cart from the chat, open cart/checkout.
 - Edit a page, confirm only that entry goes pending then indexed.
-- Save Chroma/Pinecone field validation (invalid URL / blank key keep-or-clear).
+- Confirm Knowledge Base has no Chroma/Pinecone fields.
 
 ## Files (expected)
 
@@ -247,7 +242,7 @@ tests/test-rag-*.php, test-commerce.php
 
 | Topic | Choice |
 |-------|--------|
-| Local vs remote store | **User-facing:** Chroma (self-hosted) or Pinecone. **Also** a WordPress-database store so the feature runs without extra infrastructure (tests + this environment). |
+| Local vs remote store | **WordPress database only.** Chroma cannot run in PHP; remote indexes need extra accounts/settings. |
 | Embeddings | OpenAI `text-embedding-3-small`, Connectors key, never stored in this plugin. |
 | Incremental unit | One KB source id (post/term/site doc), chunked for embedding. |
 | Grounding | Always on; RAG retrieval is a separate toggle. |

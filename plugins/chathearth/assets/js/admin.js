@@ -65,17 +65,6 @@
 			return;
 		}
 
-		var $store = $('#chathearth_rag_store');
-		function toggleStoreFields() {
-			var current = $store.val();
-			$('.chathearth-store-fields').each(function () {
-				var match = $(this).data('store');
-				$(this).toggle(match === current);
-			});
-		}
-		$store.on('change', toggleStoreFields);
-		toggleStoreFields();
-
 		var $status = $('#chathearth-kb-status');
 		var $counts = $('#chathearth-kb-counts');
 		var $tbody = $('#chathearth-kb-table tbody');
@@ -210,10 +199,7 @@
 				method: 'POST',
 				credentials: 'same-origin',
 				headers: headers(),
-				body: JSON.stringify({
-					store: $('#chathearth_rag_store').val() || '',
-					chroma_url: $('#chathearth_chroma_url').val() || ''
-				})
+				body: '{}'
 			})
 				.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
 				.then(function (result) {

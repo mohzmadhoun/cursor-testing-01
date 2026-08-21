@@ -64,6 +64,7 @@ final class Plugin {
 	 */
 	public function init(): void {
 		Schema::maybe_install();
+		Options::maybe_use_wordpress_vector_store();
 		( new Admin_Notices() )->register();
 		( new Privacy() )->register();
 		( new Settings_Page() )->register();

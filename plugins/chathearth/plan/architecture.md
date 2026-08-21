@@ -66,7 +66,7 @@ interface Text_Generator_Interface {
 
 - Toggle in **Settings → Knowledge Base**. Site content is exported to markdown under `uploads/chathearth/kb/`, with a custom table of entries and chunks.
 - Retrieval hooks `chathearth_system_prompt` (priority 20). Always-on site grounding runs at priority 5 even when RAG is off.
-- **Vector stores (user choice):** WordPress database (builtin cosine search), self-hosted **Chroma** (HTTP), or **Pinecone**.
+- **Vector store:** embeddings in `wp_chathearth_kb_chunks` with cosine search in PHP. No extra process. Filter `chathearth_vector_store` for custom PHP implementations.
 
 ```php
 interface Vector_Store_Interface {

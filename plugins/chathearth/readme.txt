@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,7 @@ Owned by [PalWP](https://palwp.com/). Support by [Mohammed Al-Madhoun](https://p
 * Appearance controls (shape, colors, position, popup size)
 * Welcome message and clickable starter phrases
 * System prompt settings plus always-on website-only grounding
-* Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; Chroma, Pinecone, or WordPress-database vectors; incremental updates
+* Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; embeddings stored in the WordPress database; incremental updates
 * Product comparison in chat and add to WooCommerce cart from the widget
 * Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v2 checkbox (once per hour after first success; enabled when both keys are set)
 * Conversation history in the browser (localStorage)
@@ -72,15 +72,7 @@ When the Knowledge Base (RAG) is enabled, ChatHearth creates embeddings for sele
 * **When it is sent:** only when RAG is enabled and the site owner runs a sync / content changes, or a visitor sends a chat message while RAG is on.
 * **Endpoint used:** `https://api.openai.com/v1/embeddings`
 
-= Chroma (optional self-hosted vector store) =
-
-If the site owner selects Chroma, embeddings and document snippets are sent to the Chroma URL they configure (typically a private server). Chroma is not contacted unless that store is selected.
-
-= Pinecone (optional remote vector store) =
-
-If the site owner selects Pinecone and saves an API key plus index host, embeddings and metadata are sent to Pinecone to store and query vectors. Pinecone is not contacted unless that store is selected.
-
-Pinecone Privacy Policy: https://www.pinecone.io/privacy/
+Embeddings and generated markdown stay on this WordPress site (custom tables and `uploads/chathearth/kb/`). The plugin does not contact Chroma, Pinecone, or any other vector-database service.
 
 = Google reCAPTCHA v2 (optional bot/abuse protection) =
 
@@ -140,9 +132,12 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 3. Settings → ChatHearth - AI Chatbot — Protection tab (rate limits, content moderation, and optional reCAPTCHA).
 4. Settings → ChatHearth - AI Chatbot — Appearance tab (colors, shape, position, and size).
 5. Settings → ChatHearth - AI Chatbot — AI Settings tab (provider, model, and system prompt).
-6. Settings → ChatHearth - AI Chatbot — Knowledge Base tab (RAG sources, vector store, sync).
+6. Settings → ChatHearth - AI Chatbot — Knowledge Base tab (RAG sources, sync).
 
 == Changelog ==
+
+= 1.4.4 =
+* Knowledge base storage is the WordPress database only. No Python, Chroma, Pinecone, or extra server setup.
 
 = 1.4.3 =
 * Clarify that Chroma is an HTTP server (data files on this host are written by that process). Clearer Test vector store errors. Helper script `bin/run-chroma.sh`.
@@ -191,8 +186,8 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Upgrade Notice ==
 
-= 1.4.3 =
-Chroma still needs a running HTTP server; use Local (WordPress database) if you do not want to run one.
+= 1.4.4 =
+Knowledge base embeddings now use the WordPress database only. Chroma and Pinecone settings are removed; no extra server software is required.
 
 = 1.4.2 =
 Smooth expand and restore animation for the chat window.
