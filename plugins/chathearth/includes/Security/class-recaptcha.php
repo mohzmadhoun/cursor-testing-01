@@ -1,6 +1,6 @@
 <?php
 /**
- * Google reCAPTCHA v2 verification.
+ * Google reCAPTCHA v3 verification.
  *
  * @package ChatHearth
  */
@@ -17,16 +17,19 @@ use ChatHearth\Options;
 use WP_Error;
 
 /**
- * Verifies reCAPTCHA v2 tokens when keys are configured.
+ * Verifies reCAPTCHA v3 tokens when keys are configured.
  *
- * After a successful checkbox verification, a short-lived cookie pass lets the
- * visitor send more messages without solving CAPTCHA again.
+ * After a successful score check, a short-lived cookie pass lets the visitor
+ * send more messages without executing CAPTCHA again.
  */
 final class Recaptcha {
 
 	private const VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 	private const COOKIE_NAME = 'chathearth_human';
+
+	/** Expected v3 action sent from the chat widget. */
+	public const ACTION = 'chathearth';
 
 	/** How long a successful CAPTCHA unlocks further chat requests. */
 	private const PASS_TTL = 3600;
@@ -47,6 +50,31 @@ final class Recaptcha {
 			return true;
 		}
 
+		$checked = $this->verify_token( $token );
+		if ( is_wp_error( $checked ) ) {
+			return $checked;
+		}
+
+		$this->issue_pass();
+
+		return true;
+	}
+
+	/**
+	 * Verify a v3 token against Google (or a test filter). Does not issue a pass.
+	 *
+	 * @param string $token Client response token.
+	 * @return true|WP_Error
+	 */
+	public function verify_token( string $token ) {
+		$pre = apply_filters( 'chathearth_pre_recaptcha_verify', null, $token );
+		if ( true === $pre ) {
+			return true;
+		}
+		if ( $pre instanceof WP_Error ) {
+			return $pre;
+		}
+
 		$token = trim( $token );
 		if ( '' === $token ) {
 			return new WP_Error(
@@ -56,7 +84,7 @@ final class Recaptcha {
 			);
 		}
 
-		$secret = trim( (string) Options::get( 'recaptcha_secret_key', '' ) );
+		$secret = Options::recaptcha_secret_key();
 		$body   = array(
 			'secret'   => $secret,
 			'response' => $token,
@@ -97,7 +125,24 @@ final class Recaptcha {
 			);
 		}
 
-		$this->issue_pass();
+		$action = isset( $data['action'] ) ? (string) $data['action'] : '';
+		if ( self::ACTION !== $action ) {
+			return new WP_Error(
+				'chathearth_recaptcha_failed',
+				__( 'CAPTCHA verification failed. Please try again.', 'chathearth' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$score     = isset( $data['score'] ) ? (float) $data['score'] : 0.0;
+		$min_score = Options::recaptcha_min_score();
+		if ( $score < $min_score ) {
+			return new WP_Error(
+				'chathearth_recaptcha_failed',
+				__( 'CAPTCHA verification failed. Please try again.', 'chathearth' ),
+				array( 'status' => 403 )
+			);
+		}
 
 		return true;
 	}
@@ -157,18 +202,20 @@ final class Recaptcha {
 		$path     = defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/';
 		$domain   = defined( 'COOKIE_DOMAIN' ) && COOKIE_DOMAIN ? COOKIE_DOMAIN : '';
 
-		setcookie(
-			self::COOKIE_NAME,
-			$token,
-			array(
-				'expires'  => time() + self::PASS_TTL,
-				'path'     => $path,
-				'domain'   => $domain,
-				'secure'   => $secure,
-				'httponly' => $httponly,
-				'samesite' => 'Lax',
-			)
-		);
+		if ( ! headers_sent() ) {
+			setcookie(
+				self::COOKIE_NAME,
+				$token,
+				array(
+					'expires'  => time() + self::PASS_TTL,
+					'path'     => $path,
+					'domain'   => $domain,
+					'secure'   => $secure,
+					'httponly' => $httponly,
+					'samesite' => 'Lax',
+				)
+			);
+		}
 
 		$_COOKIE[ self::COOKIE_NAME ] = $token;
 	}

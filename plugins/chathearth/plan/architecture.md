@@ -22,7 +22,7 @@ On repeated **global** rate-limit denials within an hour, `Rate_Limiter` may ema
 | Incident escalation | Global denials counted hourly; at threshold → email + notice + optional auto-disable |
 | Message length | Max length with `mb_*` UTF-8 truncation |
 | REST auth | `wp_rest` nonce (`X-WP-Nonce`) |
-| Google reCAPTCHA v2 | Optional — active only when site key **and** secret key are set; checkbox once, then ~1h human-pass cookie; token verified before rate limits / AI |
+| Google reCAPTCHA v3 | Optional — active only when site key **and** secret key are set (plugin settings or `CHATHEARTH_RECAPTCHA_SITE_KEY` / `CHATHEARTH_RECAPTCHA_SECRET_KEY`); white blurred overlay until Google returns an acceptable score, then ~1h human-pass cookie; token verified before rate limits / AI |
 
 Counters: `wp_cache_incr` when an external object cache is present; otherwise exclusive `add_option` lock + transients. Override client IP via `chathearth_client_ip`.
 
@@ -32,9 +32,8 @@ Counters: `wp_cache_incr` when an external object cache is present; otherwise ex
 |----------|--------|
 | **Cloudflare Turnstile** | Privacy-oriented challenge |
 | **hCaptcha** | Independent CAPTCHA provider |
-| **Google reCAPTCHA v3** | Score-based (no checkbox); threshold in settings |
 
-**Google reCAPTCHA v2** (“I’m not a robot” Checkbox) ships when keys are configured in Protection settings.
+**Google reCAPTCHA v3** ships when keys are configured in Protection settings or the server environment.
 
 ## Hooks (available now)
 
