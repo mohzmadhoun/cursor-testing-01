@@ -26,12 +26,9 @@ if ( ! $chathearth_tests_dir ) {
 $chathearth_tests_dir = rtrim( $chathearth_tests_dir, '/\\' );
 
 if ( ! file_exists( $chathearth_tests_dir . '/includes/functions.php' ) ) {
-	fwrite(
-		STDERR,
-		'Could not find the WordPress test suite in ' . $chathearth_tests_dir . PHP_EOL
+	throw new RuntimeException(
+		'Could not find the WordPress test suite. Run .cursor/install.sh, or point WP_TESTS_DIR at an existing installation.'
 	);
-	fwrite( STDERR, 'Run .cursor/install.sh, or point WP_TESTS_DIR at an existing installation.' . PHP_EOL );
-	exit( 1 );
 }
 
 require_once $chathearth_tests_dir . '/includes/functions.php';
