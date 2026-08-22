@@ -155,6 +155,26 @@ wp plugin status ai-provider-for-openai
 wp eval '$r = WordPress\AiClient\AiClient::defaultRegistry(); echo $r->hasProvider("openai") ? "registered\n" : "missing\n";'
 ```
 
+## ChatHearth reCAPTCHA v3
+
+ChatHearth turns on Google reCAPTCHA v3 only when both a site key and a secret
+key are present. For every Cloud Agent, add environment secrets named
+`CHATHEARTH_RECAPTCHA_SITE_KEY` and `CHATHEARTH_RECAPTCHA_SECRET_KEY`. The start
+script passes them into Apache the same way as `OPENAI_API_KEY`, without writing
+the values into the repository, Apache configuration, or WordPress database.
+Restarting the environment after adding, changing, or removing those secrets
+refreshes Apache's copy automatically.
+
+Until both secrets are set, CAPTCHA stays off. Keys can instead be entered on
+ChatHearth → Settings → Protection; that stores them in this development site's
+database, so they do not survive a fresh environment or `bin/wp-reset.sh`.
+
+You can check that the keys reached PHP without printing them:
+
+```bash
+wp eval 'echo ChatHearth\Options::is_recaptcha_enabled() && ChatHearth\Options::recaptcha_keys_from_environment() ? "env-recaptcha-on\n" : "env-recaptcha-off\n";'
+```
+
 ## Writing a plugin
 
 `plugins/hello-cursor` is the reference: a plugin header and constants in the main

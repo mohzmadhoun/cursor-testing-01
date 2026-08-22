@@ -166,8 +166,18 @@ configure_apache() {
 	sudo a2enconf servername >/dev/null
 	sudo a2dissite 000-default >/dev/null 2>&1 || true
 	sudo a2ensite wordpress >/dev/null
-	if [ -n "${OPENAI_API_KEY:-}" ]; then
-		sudo --preserve-env=OPENAI_API_KEY apache2ctl configtest
+
+	local preserve=()
+	local name
+	for name in OPENAI_API_KEY CHATHEARTH_RECAPTCHA_SITE_KEY CHATHEARTH_RECAPTCHA_SECRET_KEY; do
+		if [ -n "${!name:-}" ]; then
+			preserve+=("$name")
+		fi
+	done
+	if [ "${#preserve[@]}" -gt 0 ]; then
+		local joined
+		joined="$(IFS=,; echo "${preserve[*]}")"
+		sudo --preserve-env="$joined" apache2ctl configtest
 	else
 		sudo apache2ctl configtest
 	fi

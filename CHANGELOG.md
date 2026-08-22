@@ -51,6 +51,7 @@ Replaces Google reCAPTCHA v2’s checkbox with reCAPTCHA v3. When CAPTCHA is req
 | --- | --- |
 | `composer check` | PHPCS clean; PHPStan level 5 clean; 45 tests / 106 assertions (ChatHearth 27 tests, 82 assertions) |
 | Overlay | White `rgba(255,255,255,0.72)` cover with `blur(10px)` over the full chat panel |
+| Environment secrets | `CHATHEARTH_RECAPTCHA_SITE_KEY` and `CHATHEARTH_RECAPTCHA_SECRET_KEY` reach Apache via PassEnv; `Options::recaptcha_keys_from_environment()` is true; homepage loads `recaptcha/api.js`; dummy `POST /chathearth/v1/recaptcha` returns `chathearth_recaptcha_failed` |
 
 ### Notes
 
@@ -59,7 +60,8 @@ Replaces Google reCAPTCHA v2’s checkbox with reCAPTCHA v3. When CAPTCHA is req
 
 ### Commits
 
-- `_this entry_` Switch ChatHearth from reCAPTCHA v2 to v3
+- `a861845` Switch ChatHearth from reCAPTCHA v2 to v3
+- `_this entry_` Document reCAPTCHA v3 environment secrets
 
 ---
 
