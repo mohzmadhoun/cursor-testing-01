@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use ChatHearth\Ai\Ai_Gateway;
 use ChatHearth\Commerce\Cart_Service;
 use ChatHearth\Options;
+use ChatHearth\Rag\Current_Page;
 use ChatHearth\Rag\Retriever;
 use ChatHearth\Security\Content_Moderation;
 use ChatHearth\Security\Rate_Limiter;
@@ -63,6 +64,30 @@ final class Chat_Controller {
 						'type'              => 'string',
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'page_id'         => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					),
+					'page_type'       => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'page_taxonomy'   => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'page_url'        => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'esc_url_raw',
 					),
 				),
 			)
@@ -237,6 +262,13 @@ final class Chat_Controller {
 			return $moderation;
 		}
 
+		Current_Page::instance()->capture(
+			(int) $request->get_param( 'page_id' ),
+			(string) $request->get_param( 'page_type' ),
+			(string) $request->get_param( 'page_taxonomy' ),
+			(string) $request->get_param( 'page_url' )
+		);
+
 		$reply = ( new Ai_Gateway() )->generate_reply( $message, $history );
 
 		if ( is_wp_error( $reply ) ) {
@@ -244,12 +276,13 @@ final class Chat_Controller {
 		}
 
 		$retriever = Retriever::instance();
+		$current   = Current_Page::instance();
 
 		return new WP_REST_Response(
 			array(
 				'reply'    => $reply,
-				'sources'  => $retriever->last_sources(),
-				'products' => $retriever->last_products(),
+				'sources'  => self::merge_unique_sources( $current->source(), $retriever->last_sources() ),
+				'products' => self::merge_unique_products( $current->product(), $retriever->last_products() ),
 				'commerce' => array(
 					'enabled'      => Cart_Service::is_available(),
 					'cart_url'     => Cart_Service::is_available() ? Cart_Service::cart_url() : '',
@@ -258,5 +291,61 @@ final class Chat_Controller {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Prepend the current-page citation when it is not already in the RAG list.
+	 *
+	 * @param array<string, mixed>|null  $current Current page source.
+	 * @param list<array<string, mixed>> $sources RAG sources.
+	 * @return list<array<string, mixed>>
+	 */
+	private static function merge_unique_sources( $current, array $sources ): array {
+		if ( ! is_array( $current ) ) {
+			return $sources;
+		}
+
+		$url = isset( $current['url'] ) ? (string) $current['url'] : '';
+		if ( '' === $url ) {
+			return $sources;
+		}
+
+		foreach ( $sources as $source ) {
+			if ( isset( $source['url'] ) && (string) $source['url'] === $url ) {
+				return $sources;
+			}
+		}
+
+		array_unshift( $sources, $current );
+
+		return $sources;
+	}
+
+	/**
+	 * Prepend the current-page product when it is not already listed.
+	 *
+	 * @param array<string, mixed>|null  $current Current product.
+	 * @param list<array<string, mixed>> $products RAG/catalog products.
+	 * @return list<array<string, mixed>>
+	 */
+	private static function merge_unique_products( $current, array $products ): array {
+		if ( ! is_array( $current ) ) {
+			return $products;
+		}
+
+		$id = isset( $current['id'] ) ? (int) $current['id'] : 0;
+		if ( $id <= 0 ) {
+			return $products;
+		}
+
+		foreach ( $products as $product ) {
+			if ( isset( $product['id'] ) && (int) $product['id'] === $id ) {
+				return $products;
+			}
+		}
+
+		array_unshift( $products, $current );
+
+		return $products;
 	}
 }

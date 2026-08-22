@@ -59,6 +59,9 @@ class Test_ChatHearth_Plugin extends WP_UnitTestCase {
 		do_action( 'rest_api_init', $wp_rest_server );
 
 		$this->assertArrayHasKey( '/chathearth/v1/chat', $wp_rest_server->get_routes() );
+		$args = $wp_rest_server->get_routes()['/chathearth/v1/chat'][0]['args'];
+		$this->assertArrayHasKey( 'page_id', $args );
+		$this->assertArrayHasKey( 'page_url', $args );
 	}
 
 	public function test_rest_route_rejects_a_missing_nonce() {

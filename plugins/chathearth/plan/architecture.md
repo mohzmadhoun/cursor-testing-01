@@ -40,7 +40,8 @@ Counters: `wp_cache_incr` when an external object cache is present; otherwise ex
 | Hook | Type | Purpose |
 |------|------|---------|
 | `chathearth_before_generate` | action | Runs before the AI call (logging, RAG prep, N8N branch) |
-| `chathearth_system_prompt` | filter | Modify system instruction (inject RAG context) |
+| `chathearth_system_prompt` | filter | Modify system instruction (inject RAG context, current page) |
+| `chathearth_current_page` | filter | Modify the current-page document before it is injected |
 | `chathearth_messages` | filter | Modify / inject history turns |
 | `chathearth_reply` | filter | Post-process assistant text |
 | `chathearth_client_ip` | filter | Override IP used for rate limiting |
@@ -64,7 +65,7 @@ interface Text_Generator_Interface {
 ### RAG
 
 - Toggle in **Settings → Knowledge Base**. Site content is exported to markdown under `uploads/chathearth/kb/`, with a custom table of entries and chunks.
-- Retrieval hooks `chathearth_system_prompt` (priority 20). Always-on site grounding runs at priority 5 even when RAG is off.
+- Retrieval hooks `chathearth_system_prompt` (priority 20). Always-on site grounding runs at priority 5 even when RAG is off. Current-page context runs at priority 10.
 - **Vector store:** embeddings in `wp_chathearth_kb_chunks` with cosine search in PHP. No extra process. Filter `chathearth_vector_store` for custom PHP implementations.
 
 ```php

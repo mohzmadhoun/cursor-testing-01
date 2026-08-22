@@ -9,6 +9,7 @@ use ChatHearth\Commerce\Product_Catalog;
 use ChatHearth\Options;
 use ChatHearth\Rag\Builtin_Vector_Store;
 use ChatHearth\Rag\Chunker;
+use ChatHearth\Rag\Current_Page;
 use ChatHearth\Rag\Html_To_Markdown;
 use ChatHearth\Rag\Indexer;
 use ChatHearth\Rag\Kb_Repository;
@@ -35,6 +36,7 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( 'DELETE FROM ' . Schema::entries_table() );
 		add_filter( 'chathearth_pre_embed', array( $this, 'fake_embedding' ), 10, 2 );
+		Current_Page::instance()->reset();
 	}
 
 	public function tear_down() {
@@ -151,6 +153,94 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'website-only scope', $prompt );
 		$this->assertFalse( Options::is_rag_enabled() );
 		$this->assertStringNotContainsString( 'Retrieved knowledge', $prompt );
+	}
+
+	public function test_current_page_is_injected_for_a_published_post() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'   => 'Overnight Shipping',
+				'post_content' => '<p>Orders placed before 2pm leave the same day.</p>',
+				'post_status'  => 'publish',
+				'post_type'    => 'page',
+			)
+		);
+
+		$page = Current_Page::instance();
+		$page->capture( $post_id, 'post', '', '' );
+		$prompt = $page->inject( 'Base prompt', 'What does this page say about shipping?', array() );
+
+		$this->assertStringContainsString( '## Current page', $prompt );
+		$this->assertStringContainsString( 'Overnight Shipping', $prompt );
+		$this->assertStringContainsString( 'Orders placed before 2pm leave the same day.', $prompt );
+		$source = $page->source();
+		$this->assertIsArray( $source );
+		$this->assertSame( get_permalink( $post_id ), $source['url'] );
+	}
+
+	public function test_current_page_ignores_drafts_and_off_site_urls() {
+		$draft_id = self::factory()->post->create(
+			array(
+				'post_title'   => 'Secret Draft',
+				'post_content' => '<p>Unpublished coupon CODE123.</p>',
+				'post_status'  => 'draft',
+			)
+		);
+
+		$page = Current_Page::instance();
+		$page->capture( $draft_id, 'post', '', 'https://evil.example/phishing' );
+		$prompt = $page->inject( 'Base prompt', 'Tell me about this page', array() );
+
+		$this->assertStringNotContainsString( 'Secret Draft', $prompt );
+		$this->assertStringNotContainsString( 'CODE123', $prompt );
+		$this->assertStringNotContainsString( 'evil.example', $prompt );
+		$this->assertNull( $page->source() );
+
+		$protected_id = self::factory()->post->create(
+			array(
+				'post_title'    => 'Members only',
+				'post_content'  => '<p>Hidden warehouse address.</p>',
+				'post_status'   => 'publish',
+				'post_password' => 's3cret',
+			)
+		);
+		$page->capture( $protected_id, 'post', '', '' );
+		$prompt = $page->inject( 'Base prompt', 'Tell me about this page', array() );
+		$this->assertStringNotContainsString( 'Hidden warehouse address', $prompt );
+	}
+
+	public function test_current_page_injects_a_public_term() {
+		$term = self::factory()->term->create_and_get(
+			array(
+				'taxonomy'    => 'category',
+				'name'        => 'Outerwear',
+				'description' => 'Coats and jackets for cold weather.',
+			)
+		);
+
+		$page = Current_Page::instance();
+		$page->capture( (int) $term->term_id, 'term', 'category', '' );
+		$prompt = $page->inject( 'Base prompt', 'What is this category?', array() );
+
+		$this->assertStringContainsString( 'Outerwear', $prompt );
+		$this->assertStringContainsString( 'Coats and jackets for cold weather.', $prompt );
+	}
+
+	public function test_current_page_resolves_a_same_site_permalink() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'   => 'Returns Desk',
+				'post_content' => '<p>Bring your receipt within 30 days.</p>',
+				'post_status'  => 'publish',
+			)
+		);
+		$url     = (string) get_permalink( $post_id );
+
+		$page = Current_Page::instance();
+		$page->capture( 0, '', '', $url );
+		$prompt = $page->inject( 'Base prompt', 'Tell me about this page', array() );
+
+		$this->assertStringContainsString( 'Returns Desk', $prompt );
+		$this->assertStringContainsString( 'Bring your receipt within 30 days.', $prompt );
 	}
 
 	public function test_retriever_appends_hits_when_rag_enabled() {

@@ -17,6 +17,7 @@ use ChatHearth\Admin\Admin_Notices;
 use ChatHearth\Admin\Privacy;
 use ChatHearth\Admin\Settings_Page;
 use ChatHearth\Frontend\Assets;
+use ChatHearth\Rag\Current_Page;
 use ChatHearth\Rag\Indexer;
 use ChatHearth\Rag\Retriever;
 use ChatHearth\Rag\Schema;
@@ -71,6 +72,7 @@ final class Plugin {
 		( new Assets() )->register();
 		Indexer::instance()->register();
 		( new Site_Grounding() )->register();
+		Current_Page::instance()->register();
 		Retriever::instance()->register();
 
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );

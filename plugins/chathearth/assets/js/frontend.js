@@ -392,7 +392,7 @@
         function renderStarters() {
             var wrap = root.querySelector(".chathearth-starters");
             wrap.innerHTML = "";
-            (cfg.starters || []).forEach(function (phrase) {
+            starterPhrases().forEach(function (phrase) {
                 var btn = document.createElement("button");
                 btn.type = "button";
                 btn.className = "chathearth-chip";
@@ -410,7 +410,7 @@
             var hasUser = messages.some(function (m) {
                 return m.role === "user";
             });
-            wrap.hidden = hasUser || !(cfg.starters && cfg.starters.length);
+            wrap.hidden = hasUser || starterPhrases().length === 0;
         }
 
         function clearChat() {
@@ -430,6 +430,31 @@
             }
             input.value = "";
             sendMessage(text);
+        }
+
+        function currentPage() {
+            var page = cfg.page || {};
+            var url = page.url || window.location.href || "";
+            return {
+                id: parseInt(page.id, 10) || 0,
+                type: page.type || "",
+                taxonomy: page.taxonomy || "",
+                url: url,
+            };
+        }
+
+        function starterPhrases() {
+            var phrases = (cfg.starters || []).slice();
+            var about =
+                (cfg.i18n && cfg.i18n.aboutThisPage) ||
+                "Tell me about this page";
+            var page = currentPage();
+            if (about && (page.id || page.url)) {
+                if (phrases.indexOf(about) === -1) {
+                    phrases.unshift(about);
+                }
+            }
+            return phrases;
         }
 
         function sendMessage(text) {
@@ -471,6 +496,10 @@
                     message: text,
                     history: historyForApi,
                     recaptcha_token: "",
+                    page_id: currentPage().id,
+                    page_type: currentPage().type,
+                    page_taxonomy: currentPage().taxonomy,
+                    page_url: currentPage().url,
                 }),
             })
                 .then(function (res) {

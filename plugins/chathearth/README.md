@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.5** — RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
+**v1.4.6** — Current-page context in chat, RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
 
 ## Requirements (v1)
 
@@ -25,6 +25,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 - Non-streaming replies: typing indicator, then the full answer (Markdown rendered in the popup, including tables)
 - Conversation history in **`localStorage`** (survives refresh)
 - Always-on **website grounding**: answers stay on this site even when RAG is off
+- **Current page:** the widget sends the page the visitor is on; the assistant answers from that page’s public WordPress content
 - **Knowledge Base (RAG):** export pages, posts, custom post types, products, and taxonomies to markdown; store embeddings in the WordPress database; incremental reindex
 - **Store chat:** compare products from catalog facts; add purchasable products to the WooCommerce cart from the widget
 

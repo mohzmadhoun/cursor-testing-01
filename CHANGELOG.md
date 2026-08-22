@@ -25,6 +25,44 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #6 — ChatHearth current-page context
+
+_2026-08-22_
+
+### Summary
+
+Lets visitors ask about the page they are looking at. The widget sends that page’s id and URL with each chat request; the server loads the matching public WordPress post or term and injects it into the system prompt.
+
+### Added
+
+- `Current_Page` resolver (priority 10 on `chathearth_system_prompt`).
+- REST fields `page_id`, `page_type`, `page_taxonomy`, `page_url` on `POST /chathearth/v1/chat`.
+- “Tell me about this page” starter chip when the widget knows the current URL.
+- Filter `chathearth_current_page` for custom documents.
+
+### Changed
+
+- Plugin version **1.4.6**.
+- Site grounding rules mention the current page for “this page” / “here” questions.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | Pending in this commit; filled after tests |
+
+### Notes
+
+- The browser does not send page HTML. The server looks up public content by id/URL on this site only.
+- Drafts, private posts, and password-protected posts are skipped.
+- Off-site URLs are ignored.
+
+### Commits
+
+- `_this entry_` Let chat answer questions about the current page
+
+---
+
 ## PR #5 — ChatHearth reCAPTCHA v3 overlay
 
 _2026-08-21_
