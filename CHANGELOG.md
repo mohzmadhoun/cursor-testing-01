@@ -65,7 +65,9 @@ Installs Plugin Check (PCP) 2.1.0 on the site and clears every error and warning
 ### Commits
 
 - `0504f8c` Fix ChatHearth Plugin Check errors and warnings
-- `_this entry_` Record PCP verification and add the 1.4.8 zip
+- `64a5718` Record PCP verification and add the 1.4.8 zip
+- `382f914` Document Plugin Check verification in the changelog
+- `_this entry_` List remaining PCP commits
 
 ---
 
