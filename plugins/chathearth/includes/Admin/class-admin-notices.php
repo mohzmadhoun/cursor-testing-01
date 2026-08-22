@@ -53,7 +53,7 @@ final class Admin_Notices {
 
 		echo '<div class="notice notice-warning"><p>';
 		echo esc_html__(
-			'ChatHearth - AI Chatbot needs WordPress AI support, the “AI Provider for OpenAI” plugin, and an OpenAI API key under Connectors.',
+			'ChatHearth - AI Chatbot needs WordPress AI support, the “AI Provider for OpenAI” plugin, and an OpenAI API key under Connectors. The chat icon stays hidden on the site until OpenAI is ready.',
 			'chathearth'
 		);
 		echo ' <a href="' . esc_url( $connectors_url ) . '">' . esc_html__( 'Open Connectors settings', 'chathearth' ) . '</a>';

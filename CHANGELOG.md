@@ -25,6 +25,45 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #7 — Hide ChatHearth launcher without OpenAI
+
+_2026-08-22_
+
+### Summary
+
+Keeps the public chat icon off the site until WordPress Connectors has a working OpenAI setup. Visitors no longer see a launcher that cannot send messages.
+
+### Added
+
+- `Frontend\Assets::should_show_widget()` — chat enabled **and** `Plugin::is_openai_ready()`.
+- Filter `chathearth_openai_ready` always runs so tests (and custom setups) can override detection.
+
+### Changed
+
+- Plugin version **1.4.7**.
+- Frontend CSS/JS and `#chathearth-root` are not printed when OpenAI is not ready.
+- Admin dependency notice and settings copy say the icon stays hidden until OpenAI is ready.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | Pending |
+| PHPUnit | Widget hidden when `chathearth_openai_ready` is false; shown when true and chat is enabled; still hidden when chat is disabled |
+| Homepage | Pending live check |
+
+### Notes
+
+- Admin settings remain available so the site owner can turn chat on and configure Connectors.
+- REST `/chat` still returns 503 if someone calls it without OpenAI.
+- This PR is stacked on `cursor/chathearth-current-page-36a8`.
+
+### Commits
+
+- `_this entry_` Hide the chat launcher until OpenAI is configured
+
+---
+
 ## PR #6 — ChatHearth current-page context
 
 _2026-08-22_

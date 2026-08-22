@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ChatHearth\Commerce\Cart_Service;
 use ChatHearth\Options;
+use ChatHearth\Plugin;
 use ChatHearth\Rag\Current_Page;
 use ChatHearth\Rest\Chat_Controller;
 use ChatHearth\Security\Recaptcha;
@@ -34,10 +35,10 @@ final class Assets {
 	}
 
 	/**
-	 * Enqueue CSS/JS when chat is enabled.
+	 * Enqueue CSS/JS when chat is enabled and OpenAI is configured.
 	 */
 	public function enqueue(): void {
-		if ( is_admin() || ! Options::is_chat_enabled() ) {
+		if ( ! self::should_show_widget() ) {
 			return;
 		}
 
@@ -148,10 +149,24 @@ final class Assets {
 	 * Mount point in the footer.
 	 */
 	public function render_root(): void {
-		if ( is_admin() || ! Options::is_chat_enabled() ) {
+		if ( ! self::should_show_widget() ) {
 			return;
 		}
 
 		echo '<div id="chathearth-root" class="chathearth-root" aria-live="polite"></div>';
+	}
+
+	/**
+	 * Whether the public launcher should load.
+	 *
+	 * Hidden when chat is disabled or OpenAI is not configured, so visitors
+	 * never see an icon that cannot send messages.
+	 */
+	public static function should_show_widget(): bool {
+		if ( is_admin() || ! Options::is_chat_enabled() ) {
+			return false;
+		}
+
+		return Plugin::is_openai_ready();
 	}
 }

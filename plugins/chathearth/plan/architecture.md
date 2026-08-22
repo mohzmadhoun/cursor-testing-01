@@ -5,9 +5,9 @@ This document reserves contracts and hooks for future releases. v1 implements th
 ## Request flow (v1)
 
 ```
-Visitor → Frontend widget → REST /chathearth/v1/chat
+Visitor → Frontend widget (printed only when OpenAI is ready) → REST /chathearth/v1/chat
   → Kill switch → Rate_Limiter (global → per-IP) → Ai_Gateway
-  → wp_ai_client_prompt(openai) → reply JSON
+    → wp_ai_client_prompt(openai) → reply JSON
 ```
 
 On repeated **global** rate-limit denials within an hour, `Rate_Limiter` may email the admin, store an abuse alert for an admin notice, and optionally set `chat_enabled` to false.
@@ -17,6 +17,7 @@ On repeated **global** rate-limit denials within an hour, `Rate_Limiter` may ema
 | Layer | Behavior |
 |-------|----------|
 | Kill switch | `chat_enabled` — no front-end assets; REST returns 403 |
+| OpenAI ready | `Plugin::is_openai_ready()` — no front-end launcher until Connectors OpenAI is configured; REST `/chat` returns 503 |
 | Global limits | Site-wide requests/minute and /hour (all IPs) |
 | Per-IP limits | Configurable requests/minute and /hour per client IP |
 | Incident escalation | Global denials counted hourly; at threshold → email + notice + optional auto-disable |
@@ -45,6 +46,7 @@ Counters: `wp_cache_incr` when an external object cache is present; otherwise ex
 | `chathearth_messages` | filter | Modify / inject history turns |
 | `chathearth_reply` | filter | Post-process assistant text |
 | `chathearth_client_ip` | filter | Override IP used for rate limiting |
+| `chathearth_openai_ready` | filter | Override OpenAI readiness (bool). The public launcher is hidden until this is true. |
 
 ## Intended future modules
 
