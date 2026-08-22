@@ -39,6 +39,7 @@ Lets visitors ask about the page they are looking at. The widget sends that page
 - REST fields `page_id`, `page_type`, `page_taxonomy`, `page_url` on `POST /chathearth/v1/chat`.
 - “Tell me about this page” starter chip when the widget knows the current URL.
 - Filter `chathearth_current_page` for custom documents.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.6.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
 
 ### Changed
 
@@ -54,6 +55,7 @@ Lets visitors ask about the page they are looking at. The widget sends that page
 | `/my-account/` | `page` payload is `{id:9, type:post, title:My account}` |
 | `/product/hat/` | `page` payload is `{id:29, type:post, title:Hat}` |
 | WP-CLI inject | Published page and product markdown appear under `## Current page`; product pages also attach a catalog card |
+| Installable zip | `exported-plugins/chathearth-1.4.6.zip` extracts to `chathearth/chathearth.php` version 1.4.6; `unzip -t` clean; 46 PHP files parse; tests/plan/phpunit not packed |
 
 ### Notes
 
@@ -65,7 +67,8 @@ Lets visitors ask about the page they are looking at. The widget sends that page
 ### Commits
 
 - `2c8edc9` Let chat answer questions about the current page
-- `_this entry_` Record current-page verification
+- `71e4e92` Record current-page verification
+- `_this entry_` Add installable ChatHearth 1.4.6 zip
 
 ---
 

@@ -30,6 +30,7 @@ CHANGELOG.md               Running record of the work done, one entry per pull r
 .cursor/start.sh           Per-boot startup: MariaDB, Apache, plugin symlinks
 plugins/hello-cursor/      Reference plugin: settings page, shortcode, REST route, tests
 plugins/chathearth/        Ongoing ChatHearth AI chatbot project
+exported-plugins/          Installable ChatHearth zips for WordPress → Plugins → Add Plugin
 data/sample-products.csv   Sample catalogue, imported into WooCommerce on first install
 bin/new-plugin.sh          Scaffolds a new plugin
 bin/test.sh                Runs the PHPUnit suites
@@ -44,8 +45,9 @@ wp-cli.yml                 Points `wp` at the site, so no --path is needed
 
 `plugins/chathearth/` is the first ongoing product project in this repository.
 Keep its production source, tests, and project documentation in that directory.
-Keep WordPress core, uploads, database state, generated ZIP files, caches, and
-credentials outside Git.
+Keep WordPress core, uploads, database state, caches, and credentials outside
+Git. Installable ChatHearth zips live in `exported-plugins/` so they can be
+uploaded in WordPress (Plugins → Add Plugin).
 
 For future ChatHearth work:
 
