@@ -27,7 +27,7 @@ final class Kb_Repository {
 	public function get_by_source( string $source_id ): ?array {
 		global $wpdb;
 
-		$table = Schema::entries_table();
+		$table = esc_sql( Schema::entries_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
@@ -50,7 +50,7 @@ final class Kb_Repository {
 	public function get( int $id ): ?array {
 		global $wpdb;
 
-		$table = Schema::entries_table();
+		$table = esc_sql( Schema::entries_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
@@ -236,7 +236,7 @@ final class Kb_Repository {
 	public function get_pending( int $limit = 10 ): array {
 		global $wpdb;
 
-		$table = Schema::entries_table();
+		$table = esc_sql( Schema::entries_table() );
 		$limit = max( 1, min( 50, $limit ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -259,7 +259,7 @@ final class Kb_Repository {
 	public function has_pending(): bool {
 		global $wpdb;
 
-		$table = Schema::entries_table();
+		$table = esc_sql( Schema::entries_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
@@ -280,7 +280,7 @@ final class Kb_Repository {
 	public function status_counts(): array {
 		global $wpdb;
 
-		$table = Schema::entries_table();
+		$table = esc_sql( Schema::entries_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
@@ -318,40 +318,51 @@ final class Kb_Repository {
 	public function paginate( int $page = 1, int $per = 20, string $search = '' ): array {
 		global $wpdb;
 
-		$table  = Schema::entries_table();
+		$table  = esc_sql( Schema::entries_table() );
 		$page   = max( 1, $page );
 		$per    = max( 1, min( 100, $per ) );
 		$offset = ( $page - 1 ) * $per;
 		$search = trim( $search );
 
-		$where = '1=1';
-		$args  = array();
 		if ( '' !== $search ) {
-			$like   = '%' . $wpdb->esc_like( $search ) . '%';
-			$where .= ' AND (title LIKE %s OR source_id LIKE %s OR url LIKE %s)';
-			$args[] = $like;
-			$args[] = $like;
-			$args[] = $like;
-		}
-
-		$count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where}";
-		$list_sql  = "SELECT id, source_id, object_type, post_type, taxonomy, title, url, included, status, updated_gmt, indexed_gmt, error_message FROM {$table} WHERE {$where} ORDER BY updated_gmt DESC LIMIT %d OFFSET %d";
-
-		if ( ! empty( $args ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
-			$count_sql = $wpdb->prepare( $count_sql, $args );
-			$list_args = array_merge( $args, array( $per, $offset ) );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
-			$list_sql = $wpdb->prepare( $list_sql, $list_args );
+			$like = '%' . $wpdb->esc_like( $search ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
+					"SELECT COUNT(*) FROM {$table} WHERE title LIKE %s OR source_id LIKE %s OR url LIKE %s",
+					$like,
+					$like,
+					$like
+				)
+			);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
+					"SELECT id, source_id, object_type, post_type, taxonomy, title, url, included, status, updated_gmt, indexed_gmt, error_message FROM {$table} WHERE title LIKE %s OR source_id LIKE %s OR url LIKE %s ORDER BY updated_gmt DESC LIMIT %d OFFSET %d",
+					$like,
+					$like,
+					$like,
+					$per,
+					$offset
+				),
+				ARRAY_A
+			);
 		} else {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
-			$list_sql = $wpdb->prepare( $list_sql, $per, $offset );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
+			$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internally generated.
+					"SELECT id, source_id, object_type, post_type, taxonomy, title, url, included, status, updated_gmt, indexed_gmt, error_message FROM {$table} ORDER BY updated_gmt DESC LIMIT %d OFFSET %d",
+					$per,
+					$offset
+				),
+				ARRAY_A
+			);
 		}
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$total = (int) $wpdb->get_var( $count_sql );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$items = $wpdb->get_results( $list_sql, ARRAY_A );
 
 		return array(
 			'items' => is_array( $items ) ? $items : array(),
@@ -407,7 +418,7 @@ final class Kb_Repository {
 	public function chunk_ids_for_entry( int $entry_id ): array {
 		global $wpdb;
 
-		$table = Schema::chunks_table();
+		$table = esc_sql( Schema::chunks_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
@@ -433,7 +444,7 @@ final class Kb_Repository {
 	public function get_chunk( string $chunk_id ): ?array {
 		global $wpdb;
 
-		$table = Schema::chunks_table();
+		$table = esc_sql( Schema::chunks_table() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
@@ -455,8 +466,8 @@ final class Kb_Repository {
 	public function all_chunk_embeddings(): array {
 		global $wpdb;
 
-		$table   = Schema::chunks_table();
-		$entries = Schema::entries_table();
+		$table   = esc_sql( Schema::chunks_table() );
+		$entries = esc_sql( Schema::entries_table() );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table names are internally generated.
 		$rows = $wpdb->get_results(

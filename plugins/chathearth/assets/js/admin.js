@@ -136,7 +136,7 @@
 							$row.append('<td>' + escapeHtml(item.status || '') + '</td>');
 							var $cell = $('<td/>');
 							var $btn = $('<button type="button" class="button button-small chathearth-kb-toggle"/>');
-							$btn.text(included ? cfg.i18n.exclude : cfg.i18n.include);
+							$btn.text(included ? cfg.i18n.excluded : cfg.i18n.include);
 							$btn.on('click', function () {
 								toggleEntry(item.source_id, !included);
 							});

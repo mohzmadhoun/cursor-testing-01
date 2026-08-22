@@ -44,4 +44,22 @@ final class Openai_Credentials {
 			return '';
 		}
 	}
+
+	/**
+	 * REST URL for an OpenAI path, from the official provider plugin.
+	 *
+	 * @param string $path Path under the provider base URL (e.g. "embeddings").
+	 */
+	public static function endpoint( string $path ): string {
+		if ( ! class_exists( \WordPress\OpenAiAiProvider\Provider\OpenAiProvider::class ) ) {
+			return '';
+		}
+
+		$path = ltrim( $path, '/' );
+		if ( '' === $path ) {
+			return '';
+		}
+
+		return \WordPress\OpenAiAiProvider\Provider\OpenAiProvider::url( $path );
+	}
 }

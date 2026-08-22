@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the PHPUnit suite of one plugin, or of every plugin that has a
-# phpunit.xml.dist when called without arguments.
+# phpunit.xml.dist or phpunit.xml when called without arguments.
 #
 #   bin/test.sh                      # all plugins
 #   bin/test.sh hello-cursor         # one plugin
@@ -26,7 +26,10 @@ run_plugin() {
 	shift
 	local config="plugins/${slug}/phpunit.xml.dist"
 	if [ ! -f "$config" ]; then
-		echo "No ${config}; skipping ${slug}" >&2
+		config="plugins/${slug}/phpunit.xml"
+	fi
+	if [ ! -f "$config" ]; then
+		echo "No phpunit.xml(.dist) for ${slug}; skipping" >&2
 		return 0
 	fi
 	printf '\n==> %s\n' "$slug"
@@ -44,13 +47,13 @@ status=0
 found=0
 for dir in plugins/*/; do
 	slug="$(basename "$dir")"
-	[ -f "plugins/${slug}/phpunit.xml.dist" ] || continue
+	[ -f "plugins/${slug}/phpunit.xml.dist" ] || [ -f "plugins/${slug}/phpunit.xml" ] || continue
 	found=1
 	run_plugin "$slug" "$@" || status=1
 done
 
 if [ "$found" -eq 0 ]; then
-	echo "No plugin with a phpunit.xml.dist was found in plugins/." >&2
+	echo "No plugin with a phpunit.xml(.dist) was found in plugins/." >&2
 fi
 
 exit "$status"

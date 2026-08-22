@@ -2,9 +2,9 @@
 Contributors: palwp, momadhoun
 Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.7
+Stable tag: 1.4.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.8 =
+* Plugin Check (PCP) clean: hide the launcher until OpenAI is ready, and pass WordPress.org plugin checks.
+
 = 1.4.7 =
 * Hide the front-end chat icon until an OpenAI API key is configured under Connectors.
 
@@ -196,6 +199,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.8 =
+Passes Plugin Check (PCP). The chat icon stays hidden until an OpenAI API key is configured under Connectors.
 
 = 1.4.7 =
 The chat icon stays hidden on the site until an OpenAI API key is configured under Connectors.

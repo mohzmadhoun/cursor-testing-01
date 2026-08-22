@@ -131,7 +131,7 @@ final class Settings_Page {
 					'synced'     => __( 'Sync finished.', 'chathearth' ),
 					'syncFailed' => __( 'Sync failed.', 'chathearth' ),
 					'include'    => __( 'Included', 'chathearth' ),
-					'exclude'    => __( 'Excluded', 'chathearth' ),
+					'excluded'   => __( 'Excluded', 'chathearth' ),
 					'pingOk'     => __( 'Knowledge base storage is ready.', 'chathearth' ),
 					'pingFail'   => __( 'Knowledge base storage is not ready.', 'chathearth' ),
 					'empty'      => __( 'No knowledge-base entries yet. Save settings, then click Sync now.', 'chathearth' ),
