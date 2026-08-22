@@ -36,6 +36,7 @@ Installs Plugin Check (PCP) 2.1.0 on the site and clears every error and warning
 ### Added
 
 - `Openai_Credentials::endpoint()` builds OpenAI REST URLs from the official AI Provider for OpenAI plugin instead of hardcoding `api.openai.com`.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.8.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
 
 ### Changed
 
@@ -44,15 +45,16 @@ Installs Plugin Check (PCP) 2.1.0 on the site and clears every error and warning
 - Knowledge-base SQL interpolates `esc_sql()` table names.
 - Site grounding rules use concatenated strings instead of heredoc.
 - PHPUnit config renamed from `phpunit.xml.dist` to `phpunit.xml` (PCP treats `.dist` as an application file). `bin/test.sh` still accepts either name.
-- Test bootstrap guards direct access and writes suite-missing errors to STDERR.
+- Test bootstrap guards direct access and throws if the WordPress test suite is missing (no unescaped CLI output).
 - Knowledge Base admin i18n key `exclude` renamed to `excluded` so VIP `post__not_in` sniff is not tripped by a localize array.
 
 ### Verification
 
 | Check | Result |
 | --- | --- |
-| `wp plugin check chathearth` (static + runtime) | Pending |
-| `composer check` | Pending |
+| `wp plugin check chathearth` (static + runtime via `cli.php`) | Success: Checks complete. No errors found. |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 53 tests / 135 assertions (ChatHearth 35 tests, 111 assertions) |
+| Installable zip | `exported-plugins/chathearth-1.4.8.zip` extracts to `chathearth/chathearth.php` version 1.4.8; 46 PHP files parse; tests/plan/phpunit not packed |
 
 ### Notes
 
@@ -62,7 +64,8 @@ Installs Plugin Check (PCP) 2.1.0 on the site and clears every error and warning
 
 ### Commits
 
-- `_this entry_` Fix ChatHearth Plugin Check errors and warnings
+- `0504f8c` Fix ChatHearth Plugin Check errors and warnings
+- `_this entry_` Record PCP verification and add the 1.4.8 zip
 
 ---
 
