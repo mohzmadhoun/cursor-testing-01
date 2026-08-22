@@ -60,8 +60,8 @@ final class Schema {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$charset_collate = $wpdb->get_charset_collate();
-		$entries         = self::entries_table();
-		$chunks          = self::chunks_table();
+		$entries         = esc_sql( self::entries_table() );
+		$chunks          = esc_sql( self::chunks_table() );
 
 		$sql_entries = "CREATE TABLE {$entries} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -178,10 +178,13 @@ final class Schema {
 	public static function uninstall(): void {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- uninstall drop of plugin table.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::chunks_table() );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- uninstall drop of plugin table.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::entries_table() );
+		$chunks  = esc_sql( self::chunks_table() );
+		$entries = esc_sql( self::entries_table() );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall drop of plugin table.
+		$wpdb->query( "DROP TABLE IF EXISTS {$chunks}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall drop of plugin table.
+		$wpdb->query( "DROP TABLE IF EXISTS {$entries}" );
 
 		delete_option( self::VERSION_OPTION );
 		delete_option( 'chathearth_kb_sync_state' );

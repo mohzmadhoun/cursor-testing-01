@@ -13,6 +13,7 @@ parameters:
 		- /var/www/wordpress/wp-includes/ai-client/class-wp-ai-client-prompt-builder.php
 	scanDirectories:
 		- /var/www/wordpress/wp-includes/php-ai-client/src
+		- /var/www/wordpress/wp-content/plugins/ai-provider-for-openai/src
 	excludePaths:
 		analyseAndScan:
 			- plugins/*/tests/*

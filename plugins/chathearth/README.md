@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.7** — Front-end chat icon stays hidden until an OpenAI key is set in Connectors. Current-page context in chat, RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
+**v1.4.8** — Plugin Check (PCP) clean. Front-end chat icon stays hidden until an OpenAI key is set in Connectors. Current-page context in chat, RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
 
 ## Requirements (v1)
 

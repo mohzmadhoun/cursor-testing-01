@@ -25,6 +25,52 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #8 — ChatHearth Plugin Check (PCP) fixes
+
+_2026-08-22_
+
+### Summary
+
+Installs Plugin Check (PCP) 2.1.0 on the site and clears every error and warning it reported for ChatHearth so the plugin is ready for a WordPress.org-style review.
+
+### Added
+
+- `Openai_Credentials::endpoint()` builds OpenAI REST URLs from the official AI Provider for OpenAI plugin instead of hardcoding `api.openai.com`.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.8.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
+
+### Changed
+
+- Plugin version **1.4.8**.
+- `Tested up to:` **7.1** in `readme.txt`.
+- Knowledge-base SQL interpolates `esc_sql()` table names.
+- Site grounding rules use concatenated strings instead of heredoc.
+- PHPUnit config renamed from `phpunit.xml.dist` to `phpunit.xml` (PCP treats `.dist` as an application file). `bin/test.sh` still accepts either name.
+- Test bootstrap guards direct access and throws if the WordPress test suite is missing (no unescaped CLI output).
+- Knowledge Base admin i18n key `exclude` renamed to `excluded` so VIP `post__not_in` sniff is not tripped by a localize array.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `wp plugin check chathearth` (static + runtime via `cli.php`) | Success: Checks complete. No errors found. |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 53 tests / 135 assertions (ChatHearth 35 tests, 111 assertions) |
+| Installable zip | `exported-plugins/chathearth-1.4.8.zip` extracts to `chathearth/chathearth.php` version 1.4.8; 46 PHP files parse; tests/plan/phpunit not packed |
+
+### Notes
+
+- Plugin Check is installed on this WordPress site (`plugin-check` 2.1.0). It is a development tool, not part of the ChatHearth zip.
+- Embeddings and moderation still use `wp_remote_post`; WordPress AI Client does not yet generate embeddings or call Moderations. The request URL now comes from `OpenAiProvider::url()`.
+- This PR is stacked on `cursor/chathearth-hide-icon-without-key-36a8`.
+
+### Commits
+
+- `0504f8c` Fix ChatHearth Plugin Check errors and warnings
+- `64a5718` Record PCP verification and add the 1.4.8 zip
+- `382f914` Document Plugin Check verification in the changelog
+- `_this entry_` Complete the PR #8 commit list
+
+---
+
 ## PR #7 — Hide ChatHearth launcher without OpenAI
 
 _2026-08-22_

@@ -5,6 +5,12 @@
  * @package ChatHearth
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	if ( ! getenv( 'WP_TESTS_DIR' ) ) {
+		exit;
+	}
+}
+
 $chathearth_repo_dir = dirname( __DIR__, 3 );
 
 if ( file_exists( $chathearth_repo_dir . '/vendor/autoload.php' ) ) {
@@ -20,9 +26,9 @@ if ( ! $chathearth_tests_dir ) {
 $chathearth_tests_dir = rtrim( $chathearth_tests_dir, '/\\' );
 
 if ( ! file_exists( $chathearth_tests_dir . '/includes/functions.php' ) ) {
-	echo "Could not find the WordPress test suite in {$chathearth_tests_dir}." . PHP_EOL;
-	echo 'Run .cursor/install.sh, or point WP_TESTS_DIR at an existing installation.' . PHP_EOL;
-	exit( 1 );
+	throw new RuntimeException(
+		'Could not find the WordPress test suite. Run .cursor/install.sh, or point WP_TESTS_DIR at an existing installation.'
+	);
 }
 
 require_once $chathearth_tests_dir . '/includes/functions.php';

@@ -31,10 +31,12 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		delete_option( Options::OPTION_KEY );
 		Schema::install();
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( 'DELETE FROM ' . Schema::chunks_table() );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( 'DELETE FROM ' . Schema::entries_table() );
+		$chunks  = esc_sql( Schema::chunks_table() );
+		$entries = esc_sql( Schema::entries_table() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DELETE FROM {$chunks}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DELETE FROM {$entries}" );
 		add_filter( 'chathearth_pre_embed', array( $this, 'fake_embedding' ), 10, 2 );
 		Current_Page::instance()->reset();
 	}

@@ -24,8 +24,6 @@ use WP_Error;
  */
 final class Content_Moderation {
 
-	private const MODERATIONS_URL = 'https://api.openai.com/v1/moderations';
-
 	private const MODERATION_MODEL = 'omni-moderation-latest';
 
 	/** Max characters sent to the Moderations API. */
@@ -155,14 +153,15 @@ final class Content_Moderation {
 	 * @return true|WP_Error
 	 */
 	private function check_openai_moderation( string $text ) {
-		$api_key = $this->resolve_openai_api_key();
-		if ( '' === $api_key ) {
+		$api_key  = $this->resolve_openai_api_key();
+		$endpoint = Openai_Credentials::endpoint( 'moderations' );
+		if ( '' === $api_key || '' === $endpoint ) {
 			Logger::error( 'OpenAI moderation skipped: no API key available via AI Client registry.' );
 			return true;
 		}
 
 		$response = wp_remote_post(
-			self::MODERATIONS_URL,
+			$endpoint,
 			array(
 				'timeout' => 15,
 				'headers' => array(

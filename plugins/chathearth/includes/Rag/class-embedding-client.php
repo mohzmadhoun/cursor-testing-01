@@ -22,8 +22,6 @@ use WP_Error;
  */
 final class Embedding_Client {
 
-	private const ENDPOINT = 'https://api.openai.com/v1/embeddings';
-
 	private const MODEL = 'text-embedding-3-small';
 
 	private const MAX_CHARS = 8000;
@@ -83,8 +81,9 @@ final class Embedding_Client {
 			return $single_filter;
 		}
 
-		$api_key = Openai_Credentials::api_key();
-		if ( '' === $api_key ) {
+		$api_key  = Openai_Credentials::api_key();
+		$endpoint = Openai_Credentials::endpoint( 'embeddings' );
+		if ( '' === $api_key || '' === $endpoint ) {
 			return new WP_Error(
 				'chathearth_embed_no_key',
 				__( 'OpenAI is not configured, so embeddings cannot be created.', 'chathearth' )
@@ -92,7 +91,7 @@ final class Embedding_Client {
 		}
 
 		$response = wp_remote_post(
-			self::ENDPOINT,
+			$endpoint,
 			array(
 				'timeout' => 45,
 				'headers' => array(
