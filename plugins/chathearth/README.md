@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.4** — RAG knowledge base (WordPress database only), always-on website grounding, product comparison, and add-to-cart from chat.
+**v1.4.5** — RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
 
 ## Requirements (v1)
 
@@ -41,7 +41,7 @@ Configured under **Settings → ChatHearth - AI Chatbot → Protection**:
 | **Auto-disable on escalation** | Turns chat off when the threshold is reached |
 | **Max message length** | Truncates oversized messages (UTF-8 safe) |
 | **Content moderation** | Keyword/disallowed list + optional OpenAI Moderations API before the chat model |
-| **Google reCAPTCHA v2** | Optional — enabled when site key **and** secret key are set; “I’m not a robot” checkbox in the chat panel |
+| **Google reCAPTCHA v3** | Optional — enabled when site key **and** secret key are set (settings or `CHATHEARTH_RECAPTCHA_*` environment variables). A white blurred overlay covers the chat until Google verifies the visitor. |
 
 When the global-limit incident threshold is reached, the plugin emails the site admin (with a cooldown), shows a dismissible admin notice, and optionally auto-disables the chatbot. Re-enable under Protection when ready.
 
@@ -93,7 +93,9 @@ Headers: `X-WP-Nonce` with a `wp_rest` nonce (localized on the front end), `Cont
 
 Body: `{ "message": "...", "history": [ { "role": "user"|"assistant", "content": "..." } ], "recaptcha_token": "..." }`
 
-(`recaptcha_token` required only when reCAPTCHA keys are configured.)
+(`recaptcha_token` required only when reCAPTCHA keys are configured and the visitor has not already passed the overlay check.)
+
+`POST /wp-json/chathearth/v1/recaptcha` — `{ "recaptcha_token": "..." }` (same nonce). Unlocks the chat overlay.
 
 Response: `{ "reply": "...", "sources": [ { "title", "url", "type" } ], "products": [ { "id", "name", "url", "price", "purchasable" } ], "commerce": { "enabled", "cart_url", "checkout_url" } }`
 
@@ -122,7 +124,7 @@ RAG embeddings live in this site's WordPress database (`wp_chathearth_kb_chunks`
 - Main + backup AI providers; then third-party providers (DeepSeek, OpenRouter, etc.)
 - Custom launcher image/SVG upload
 - Server-side conversation history
-- **CAPTCHA:** Cloudflare Turnstile, hCaptcha, and Google reCAPTCHA **v3** (v2 is already optional when keys are set)
+- **CAPTCHA:** Cloudflare Turnstile and hCaptcha later; Google reCAPTCHA **v3** ships now
 - **Evaluation and observability:** tokens/cost monitoring, hard cost ceilings with admin escalation, latency SLOs, quality/RAG evaluation, hallucination detection, explainability, transparency, and controllability (see the metrics doc above)
 - **RAG:** enable retrieval; markdown from selected site content; WordPress-database vectors; comparison answers; add to cart from chat
 - N8N webhook for custom agents / alternate RAG or AI routing

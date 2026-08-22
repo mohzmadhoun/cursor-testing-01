@@ -56,7 +56,7 @@ final class Privacy {
 			'chathearth'
 		) . '</li>';
 		$content .= '<li>' . esc_html__(
-			'If Google reCAPTCHA is enabled in the chatbot settings, Google may process a CAPTCHA challenge (and related technical data such as IP address) according to Google’s privacy policy.',
+			'If Google reCAPTCHA v3 is enabled in the chatbot settings, Google may process a score-based challenge (and related technical data such as IP address) according to Google’s privacy policy. Visitors see a verification overlay on the chat window until Google accepts the request.',
 			'chathearth'
 		) . '</li>';
 		$content .= '<li>' . esc_html__(

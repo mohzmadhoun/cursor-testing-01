@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.4
+Stable tag: 1.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +25,7 @@ Owned by [PalWP](https://palwp.com/). Support by [Mohammed Al-Madhoun](https://p
 * System prompt settings plus always-on website-only grounding
 * Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; embeddings stored in the WordPress database; incremental updates
 * Product comparison in chat and add to WooCommerce cart from the widget
-* Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v2 checkbox (once per hour after first success; enabled when both keys are set)
+* Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v3 overlay (once per hour after first success; enabled when both keys are set)
 * Conversation history in the browser (localStorage)
 * Non-streaming replies with a typing indicator and Markdown rendering
 
@@ -33,7 +33,7 @@ Configure your OpenAI API key under **Connectors**. This plugin does not store t
 
 **Planned: Evaluation and observability**
 
-Later releases are expected to add more CAPTCHA providers (Cloudflare Turnstile, hCaptcha, Google reCAPTCHA v3), tokens and cost monitoring, hard cost ceilings with admin escalation, latency and reliability metrics, RAG quality evaluation, hallucination detection, explainability, transparency, and controllability. See the plugin `plan/` docs (especially `metrics-and-methods-for-quality.md` and `functionalities.md`) for details.
+Later releases are expected to add more CAPTCHA providers (Cloudflare Turnstile, hCaptcha), tokens and cost monitoring, hard cost ceilings with admin escalation, latency and reliability metrics, RAG quality evaluation, hallucination detection, explainability, transparency, and controllability. See the plugin `plan/` docs (especially `metrics-and-methods-for-quality.md` and `functionalities.md`) for details.
 
 == External services ==
 
@@ -74,13 +74,13 @@ When the Knowledge Base (RAG) is enabled, ChatHearth creates embeddings for sele
 
 Embeddings and generated markdown stay on this WordPress site (custom tables and `uploads/chathearth/kb/`). The plugin does not contact Chroma, Pinecone, or any other vector-database service.
 
-= Google reCAPTCHA v2 (optional bot/abuse protection) =
+= Google reCAPTCHA v3 (optional bot/abuse protection) =
 
-Google reCAPTCHA v2 ("I'm not a robot" Checkbox) is an optional, human-verification service used only to protect the chat endpoint from automated abuse. It is **disabled by default** and only becomes active when the site owner enters both a reCAPTCHA site key and secret key under Settings → ChatHearth - AI Chatbot → Protection.
+Google reCAPTCHA v3 is an optional, score-based human-verification service used only to protect the chat endpoint from automated abuse. It is **disabled by default** and only becomes active when the site owner provides both a reCAPTCHA site key and secret key (under Settings → ChatHearth - AI Chatbot → Protection, or via the `CHATHEARTH_RECAPTCHA_SITE_KEY` and `CHATHEARTH_RECAPTCHA_SECRET_KEY` environment variables).
 
-* **What is sent:** when enabled, the reCAPTCHA JavaScript is loaded from Google on front-end pages where the chat widget appears, and Google may collect device, browser, and usage data (including the visitor's IP address) to assess whether the visitor is human. When a visitor completes the checkbox and sends a message, the reCAPTCHA response token and the visitor's IP address are sent to Google's verification endpoint to validate the challenge.
+* **What is sent:** when enabled, the reCAPTCHA JavaScript is loaded from Google on front-end pages where the chat widget appears, and Google may collect device, browser, and usage data (including the visitor's IP address) to assess whether the visitor is human. When the chat opens, a verification token and the visitor's IP address are sent to Google's verification endpoint. A white, translucent, blurred overlay covers the chat window until verification succeeds.
 * **When it is sent:** only when the site owner has enabled reCAPTCHA (both keys set). If reCAPTCHA is not configured, no request is ever made to Google and Google's script is not loaded.
-* **Endpoints used:** `https://www.google.com/recaptcha/api.js` (widget) and `https://www.google.com/recaptcha/api/siteverify` (server-side verification).
+* **Endpoints used:** `https://www.google.com/recaptcha/api.js` (script) and `https://www.google.com/recaptcha/api/siteverify` (server-side verification).
 
 Google Terms of Service: https://policies.google.com/terms
 Google Privacy Policy: https://policies.google.com/privacy
@@ -119,11 +119,11 @@ In the visitor's browser via localStorage. Server-side history is planned for a 
 
 = How does abuse / rate-limit protection work? =
 
-Under Settings → ChatHearth - AI Chatbot → Protection you can set per-IP limits, site-wide (global) limits, an escalation threshold, and optional auto-disable. Optionally add Google reCAPTCHA v2 (“I’m not a robot” Checkbox) site and secret keys — CAPTCHA turns on automatically when both are set (green status in settings). Content moderation can check messages with a keyword list and/or OpenAI’s Moderations API before they reach the chat model. Chat requests are checked in order: kill switch, reCAPTCHA (if enabled), then global limits, then per-IP limits, then content moderation (if enabled), then the AI call. When global limits are hit repeatedly within an hour, the plugin emails the admin, shows an admin notice, and can turn the chatbot off automatically.
+Under Settings → ChatHearth - AI Chatbot → Protection you can set per-IP limits, site-wide (global) limits, an escalation threshold, and optional auto-disable. Optionally add Google reCAPTCHA v3 site and secret keys — CAPTCHA turns on automatically when both are set (green status in settings). Visitors then see a white blurred overlay on the chat window until Google verifies them. Content moderation can check messages with a keyword list and/or OpenAI’s Moderations API before they reach the chat model. Chat requests are checked in order: kill switch, reCAPTCHA (if enabled), then global limits, then per-IP limits, then content moderation (if enabled), then the AI call. When global limits are hit repeatedly within an hour, the plugin emails the admin, shows an admin notice, and can turn the chatbot off automatically.
 
 = Will there be usage, cost, or quality monitoring? =
 
-Yes — planned under Evaluation and observability (tokens/cost, latency, groundedness, hallucination checks, admin dashboards). Request-count protection, admin escalation, and optional reCAPTCHA v2 ship now; hard dollar/token ceilings and additional CAPTCHA providers (Turnstile, hCaptcha, reCAPTCHA v3) are still planned.
+Yes — planned under Evaluation and observability (tokens/cost, latency, groundedness, hallucination checks, admin dashboards). Request-count protection, admin escalation, and optional reCAPTCHA v3 ship now; hard dollar/token ceilings and additional CAPTCHA providers (Turnstile, hCaptcha) are still planned.
 
 == Screenshots ==
 
@@ -135,6 +135,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 6. Settings → ChatHearth - AI Chatbot — Knowledge Base tab (RAG sources, sync).
 
 == Changelog ==
+
+= 1.4.5 =
+* Replace Google reCAPTCHA v2 with v3. A white, translucent, blurred overlay covers the chat until verification succeeds.
 
 = 1.4.4 =
 * Knowledge base storage is the WordPress database only. No Python, Chroma, Pinecone, or extra server setup.
@@ -185,6 +188,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.5 =
+Chat uses Google reCAPTCHA v3 with a white blurred overlay instead of a v2 checkbox.
 
 = 1.4.4 =
 Knowledge base embeddings now use the WordPress database only. Chroma and Pinecone settings are removed; no extra server software is required.

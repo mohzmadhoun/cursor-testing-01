@@ -25,6 +25,46 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #5 — ChatHearth reCAPTCHA v3 overlay
+
+_2026-08-21_
+
+### Summary
+
+Replaces Google reCAPTCHA v2’s checkbox with reCAPTCHA v3. When CAPTCHA is required, a white, translucent, blurred overlay covers the chat window until Google returns an acceptable score.
+
+### Added
+
+- `POST /chathearth/v1/recaptcha` to unlock the overlay after a v3 token check.
+- Minimum-score setting (default 0.5).
+- Runtime keys from `CHATHEARTH_RECAPTCHA_SITE_KEY` and `CHATHEARTH_RECAPTCHA_SECRET_KEY` (same Apache PassEnv pattern as `OPENAI_API_KEY`).
+
+### Changed
+
+- Plugin version **1.4.5**.
+- Chat widget uses an overlay instead of an inline v2 widget.
+- Server verifies v3 `action` (`chathearth`) and score.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 45 tests / 106 assertions (ChatHearth 27 tests, 82 assertions) |
+| Overlay | White `rgba(255,255,255,0.72)` cover with `blur(10px)` over the full chat panel |
+| Environment secrets | `CHATHEARTH_RECAPTCHA_SITE_KEY` and `CHATHEARTH_RECAPTCHA_SECRET_KEY` reach Apache via PassEnv; `Options::recaptcha_keys_from_environment()` is true; homepage loads `recaptcha/api.js`; dummy `POST /chathearth/v1/recaptcha` returns `chathearth_recaptcha_failed` |
+
+### Notes
+
+- Keys are not committed. Provide them in Cloud Agent environment secrets. Until they are set, CAPTCHA stays off.
+- After a successful check, the existing one-hour human-pass cookie still skips further challenges.
+
+### Commits
+
+- `a861845` Switch ChatHearth from reCAPTCHA v2 to v3
+- `_this entry_` Document reCAPTCHA v3 environment secrets
+
+---
+
 ## PR #4 — ChatHearth RAG, website grounding, and chat commerce
 
 _2026-08-19_
@@ -104,7 +144,8 @@ Adds Cursor Milestone 01 to ChatHearth: a knowledge base that exports selected s
 - `a717512` Clarify local Chroma files and improve store ping errors
 - `c83cdad` Document local Chroma persist files versus HTTP
 - `437de05` Store ChatHearth RAG embeddings in the WordPress database only
-- `_this entry_` Record WordPress-only RAG store verification
+- `ea60252` Record WordPress-only RAG store verification
+- `_this entry_` Add installable ChatHearth 1.4.4 zip
 
 ---
 

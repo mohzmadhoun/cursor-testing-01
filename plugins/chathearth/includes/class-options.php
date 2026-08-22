@@ -51,6 +51,7 @@ final class Options {
 			'auto_disable_on_global_escalation' => true,
 			'recaptcha_site_key'                => '',
 			'recaptcha_secret_key'              => '',
+			'recaptcha_min_score'               => 0.5,
 			'max_message_length'                => 2000,
 			'max_history_messages'              => 20,
 			'content_moderation_enabled'        => true,
@@ -140,13 +141,52 @@ final class Options {
 	}
 
 	/**
-	 * Whether Google reCAPTCHA v2 is active (both site and secret keys configured).
+	 * Whether Google reCAPTCHA v3 is active (both site and secret keys configured).
 	 */
 	public static function is_recaptcha_enabled(): bool {
-		$site   = trim( (string) self::get( 'recaptcha_site_key', '' ) );
-		$secret = trim( (string) self::get( 'recaptcha_secret_key', '' ) );
+		$site   = self::recaptcha_site_key();
+		$secret = self::recaptcha_secret_key();
 
 		return '' !== $site && '' !== $secret;
+	}
+
+	/**
+	 * Resolved reCAPTCHA v3 site key (environment/constant wins over settings).
+	 */
+	public static function recaptcha_site_key(): string {
+		return self::resolved_secret( 'CHATHEARTH_RECAPTCHA_SITE_KEY', 'recaptcha_site_key' );
+	}
+
+	/**
+	 * Resolved reCAPTCHA v3 secret key (environment/constant wins over settings).
+	 */
+	public static function recaptcha_secret_key(): string {
+		return self::resolved_secret( 'CHATHEARTH_RECAPTCHA_SECRET_KEY', 'recaptcha_secret_key' );
+	}
+
+	/**
+	 * Whether site/secret keys come from the server environment rather than plugin settings.
+	 */
+	public static function recaptcha_keys_from_environment(): bool {
+		$site   = self::env_or_constant( 'CHATHEARTH_RECAPTCHA_SITE_KEY' );
+		$secret = self::env_or_constant( 'CHATHEARTH_RECAPTCHA_SECRET_KEY' );
+
+		return '' !== $site && '' !== $secret;
+	}
+
+	/**
+	 * Minimum v3 score (0–1) required to unlock chat.
+	 */
+	public static function recaptcha_min_score(): float {
+		$score = (float) self::get( 'recaptcha_min_score', 0.5 );
+		if ( $score < 0 ) {
+			return 0.0;
+		}
+		if ( $score > 1 ) {
+			return 1.0;
+		}
+
+		return $score;
 	}
 
 	/**
@@ -322,6 +362,11 @@ final class Options {
 			}
 		}
 
+		if ( isset( $input['recaptcha_min_score'] ) ) {
+			$score                      = (float) $input['recaptcha_min_score'];
+			$out['recaptcha_min_score'] = max( 0.0, min( 1.0, round( $score, 2 ) ) );
+		}
+
 		$max_len                   = isset( $input['max_message_length'] ) ? absint( $input['max_message_length'] ) : (int) $defaults['max_message_length'];
 		$out['max_message_length'] = max( 100, min( 8000, $max_len ) );
 
@@ -452,6 +497,48 @@ final class Options {
 			'rag_pinecone_host',
 			'rag_pinecone_namespace',
 		);
+	}
+
+	/**
+	 * Read a secret from a PHP constant, then the process environment, then settings.
+	 *
+	 * @param string $env_name Constant / environment variable name.
+	 * @param string $option_key Settings key.
+	 */
+	private static function resolved_secret( string $env_name, string $option_key ): string {
+		$from_env = self::env_or_constant( $env_name );
+		if ( '' !== $from_env ) {
+			return $from_env;
+		}
+
+		return trim( (string) self::get( $option_key, '' ) );
+	}
+
+	/**
+	 * Value from a PHP constant or environment variable.
+	 *
+	 * @param string $name Constant and environment variable name.
+	 */
+	private static function env_or_constant( string $name ): string {
+		if ( defined( $name ) ) {
+			$value = constant( $name );
+			if ( is_string( $value ) || is_numeric( $value ) ) {
+				$value = trim( (string) $value );
+				if ( '' !== $value ) {
+					return $value;
+				}
+			}
+		}
+
+		$env = getenv( $name );
+		if ( is_string( $env ) ) {
+			$env = trim( $env );
+			if ( '' !== $env ) {
+				return $env;
+			}
+		}
+
+		return '';
 	}
 
 	/**

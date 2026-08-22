@@ -59,25 +59,50 @@ apache_is_up() {
 	curl -fsS -o /dev/null --max-time 5 "http://127.0.0.1:${SITE_PORT}/" 2>/dev/null
 }
 
-configure_openai_apache_env() {
-	local conf='/etc/apache2/conf-available/openai-key-env.conf'
-	if [ -n "${OPENAI_API_KEY:-}" ]; then
-		# Only the variable name is written to disk. Apache inherits the actual
-		# value from start.sh's environment and passes it to mod_php.
-		echo 'PassEnv OPENAI_API_KEY' | sudo tee "$conf" >/dev/null
-		sudo a2enconf openai-key-env >/dev/null
-	else
+configure_runtime_apache_env() {
+	local conf='/etc/apache2/conf-available/chathearth-runtime-env.conf'
+	local vars=()
+	local name
+
+	for name in OPENAI_API_KEY CHATHEARTH_RECAPTCHA_SITE_KEY CHATHEARTH_RECAPTCHA_SECRET_KEY; do
+		if [ -n "${!name:-}" ]; then
+			vars+=("$name")
+		fi
+	done
+
+	if [ "${#vars[@]}" -eq 0 ]; then
+		sudo a2disconf chathearth-runtime-env >/dev/null 2>&1 || true
 		sudo a2disconf openai-key-env >/dev/null 2>&1 || true
-		sudo rm -f "$conf"
+		sudo rm -f "$conf" '/etc/apache2/conf-available/openai-key-env.conf'
+		return 0
 	fi
+
+	{
+		echo '# Runtime secrets passed from the Cloud Agent environment into PHP.'
+		for name in "${vars[@]}"; do
+			printf 'PassEnv %s\n' "$name"
+		done
+	} | sudo tee "$conf" >/dev/null
+	sudo a2enconf chathearth-runtime-env >/dev/null
+}
+
+runtime_env_fingerprint() {
+	local parts=()
+	local name
+	for name in OPENAI_API_KEY CHATHEARTH_RECAPTCHA_SITE_KEY CHATHEARTH_RECAPTCHA_SECRET_KEY; do
+		if [ -n "${!name:-}" ]; then
+			parts+=("$(printf '%s' "${!name}" | sha256sum | awk '{print $1}')")
+		else
+			parts+=('none')
+		fi
+	done
+	printf '%s' "${parts[*]}"
 }
 
 start_apache() {
-	local env_marker='/run/wordpress-openai-key.fingerprint'
-	local env_fingerprint='none'
-	if [ -n "${OPENAI_API_KEY:-}" ]; then
-		env_fingerprint="$(printf '%s' "$OPENAI_API_KEY" | sha256sum | awk '{print $1}')"
-	fi
+	local env_marker='/run/wordpress-runtime-env.fingerprint'
+	local env_fingerprint
+	env_fingerprint="$(runtime_env_fingerprint)"
 
 	# Environment snapshots intentionally exclude volatile /run state. Recreate
 	# both the symlink target and Apache's lock directory on every boot, before
@@ -85,7 +110,7 @@ start_apache() {
 	sudo install -d -o root -g root -m 1777 /run/lock
 	sudo install -d -o www-data -g root -m 0755 /var/lock/apache2
 
-	configure_openai_apache_env
+	configure_runtime_apache_env
 
 	if apache_is_up; then
 		if [ -f "$env_marker" ] && [ "$(cat "$env_marker")" = "$env_fingerprint" ]; then
@@ -96,7 +121,7 @@ start_apache() {
 		# Secrets are per-agent runtime state. Restart when the key was added,
 		# changed or removed so Apache never keeps credentials from an earlier
 		# environment. The marker contains only a one-way fingerprint.
-		log "Restarting Apache to refresh the OpenAI environment"
+		log "Restarting Apache to refresh runtime secrets"
 		sudo apache2ctl stop >/dev/null 2>&1 || sudo pkill -x apache2 || true
 		sleep 2
 	fi
@@ -115,10 +140,19 @@ start_apache() {
 		sleep 2
 	fi
 
-	if [ -n "${OPENAI_API_KEY:-}" ]; then
+	local preserve=()
+	local name
+	for name in OPENAI_API_KEY CHATHEARTH_RECAPTCHA_SITE_KEY CHATHEARTH_RECAPTCHA_SECRET_KEY; do
+		if [ -n "${!name:-}" ]; then
+			preserve+=("$name")
+		fi
+	done
+	if [ "${#preserve[@]}" -gt 0 ]; then
 		# Ubuntu's SysV service wrapper strips arbitrary variables even when
 		# sudo preserves them. apache2ctl does not.
-		sudo --preserve-env=OPENAI_API_KEY apache2ctl start >/dev/null 2>&1 || true
+		local joined
+		joined="$(IFS=,; echo "${preserve[*]}")"
+		sudo --preserve-env="$joined" apache2ctl start >/dev/null 2>&1 || true
 	else
 		sudo service apache2 start >/dev/null 2>&1 || true
 	fi

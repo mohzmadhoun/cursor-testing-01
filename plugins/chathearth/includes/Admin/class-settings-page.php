@@ -289,27 +289,39 @@ final class Settings_Page {
 							<td><input name="<?php echo esc_attr( $opt ); ?>[max_message_length]" id="chathearth_max_len" type="number" min="100" max="8000" value="<?php echo esc_attr( (string) $settings['max_message_length'] ); ?>" class="small-text" /></td>
 						</tr>
 						<tr>
-							<th scope="row"><?php echo esc_html__( 'Google reCAPTCHA v2', 'chathearth' ); ?></th>
+							<th scope="row"><?php echo esc_html__( 'Google reCAPTCHA v3', 'chathearth' ); ?></th>
 							<td>
 								<?php if ( Options::is_recaptcha_enabled() ) : ?>
 									<div class="notice notice-success inline chathearth-recaptcha-status">
-										<p><?php echo esc_html__( 'CAPTCHA is enabled. Visitors complete the reCAPTCHA v2 checkbox once; further messages in the next hour stay unlocked.', 'chathearth' ); ?></p>
+										<p>
+											<?php
+											if ( Options::recaptcha_keys_from_environment() ) {
+												echo esc_html__( 'CAPTCHA is enabled with reCAPTCHA v3 keys from the server environment. Visitors see a white blurred overlay until Google verifies them; chat then stays unlocked for about an hour.', 'chathearth' );
+											} else {
+												echo esc_html__( 'CAPTCHA is enabled. Visitors see a white blurred overlay until reCAPTCHA v3 verifies them; chat then stays unlocked for about an hour.', 'chathearth' );
+											}
+											?>
+										</p>
 									</div>
 								<?php else : ?>
-									<p class="description"><?php echo esc_html__( 'CAPTCHA is disabled until both site key and secret key are set. Create a reCAPTCHA v2 (“I’m not a robot” Checkbox) key for your domain.', 'chathearth' ); ?></p>
+									<p class="description"><?php echo esc_html__( 'CAPTCHA is disabled until both site key and secret key are set (plugin settings or CHATHEARTH_RECAPTCHA_SITE_KEY / CHATHEARTH_RECAPTCHA_SECRET_KEY). Create a reCAPTCHA v3 key for your domain.', 'chathearth' ); ?></p>
 								<?php endif; ?>
 							</td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="chathearth_recaptcha_site"><?php echo esc_html__( 'reCAPTCHA site key', 'chathearth' ); ?></label></th>
 							<td>
-								<input name="<?php echo esc_attr( $opt ); ?>[recaptcha_site_key]" id="chathearth_recaptcha_site" type="text" class="regular-text" value="<?php echo esc_attr( (string) $settings['recaptcha_site_key'] ); ?>" autocomplete="off" />
+								<input name="<?php echo esc_attr( $opt ); ?>[recaptcha_site_key]" id="chathearth_recaptcha_site" type="text" class="regular-text" value="<?php echo esc_attr( Options::recaptcha_keys_from_environment() ? '' : (string) $settings['recaptcha_site_key'] ); ?>" autocomplete="off" <?php disabled( Options::recaptcha_keys_from_environment() ); ?> />
+								<?php if ( Options::recaptcha_keys_from_environment() ) : ?>
+									<p class="description"><?php echo esc_html__( 'Site key is provided by the server environment and is not stored in plugin settings.', 'chathearth' ); ?></p>
+								<?php endif; ?>
 							</td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="chathearth_recaptcha_secret"><?php echo esc_html__( 'reCAPTCHA secret key', 'chathearth' ); ?></label></th>
 							<td>
-								<input name="<?php echo esc_attr( $opt ); ?>[recaptcha_secret_key]" id="chathearth_recaptcha_secret" type="password" class="regular-text" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( '' !== (string) $settings['recaptcha_secret_key'] ? __( '•••••••• (saved — leave blank to keep)', 'chathearth' ) : '' ); ?>" />
+								<input name="<?php echo esc_attr( $opt ); ?>[recaptcha_secret_key]" id="chathearth_recaptcha_secret" type="password" class="regular-text" value="" autocomplete="new-password" <?php disabled( Options::recaptcha_keys_from_environment() ); ?> placeholder="<?php echo esc_attr( Options::recaptcha_keys_from_environment() ? __( 'Set in the server environment', 'chathearth' ) : ( '' !== (string) $settings['recaptcha_secret_key'] ? __( '•••••••• (saved — leave blank to keep)', 'chathearth' ) : '' ) ); ?>" />
+								<?php if ( ! Options::recaptcha_keys_from_environment() ) : ?>
 								<p class="description">
 									<label>
 										<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[recaptcha_clear_secret]" value="1" />
@@ -318,9 +330,17 @@ final class Settings_Page {
 								</p>
 								<p class="description">
 									<?php
-									echo esc_html__( 'Get keys from Google reCAPTCHA admin. Leave the secret blank when saving to keep the current value.', 'chathearth' );
+									echo esc_html__( 'Get a v3 key pair from Google reCAPTCHA admin. Leave the secret blank when saving to keep the current value.', 'chathearth' );
 									?>
 								</p>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="chathearth_recaptcha_score"><?php echo esc_html__( 'Minimum score', 'chathearth' ); ?></label></th>
+							<td>
+								<input name="<?php echo esc_attr( $opt ); ?>[recaptcha_min_score]" id="chathearth_recaptcha_score" type="number" min="0" max="1" step="0.05" value="<?php echo esc_attr( (string) Options::recaptcha_min_score() ); ?>" class="small-text" />
+								<p class="description"><?php echo esc_html__( 'Google reCAPTCHA v3 scores range from 0.0 (likely a bot) to 1.0 (likely a human). 0.5 is the usual threshold.', 'chathearth' ); ?></p>
 							</td>
 						</tr>
 						<tr>

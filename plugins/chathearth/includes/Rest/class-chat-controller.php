@@ -67,6 +67,23 @@ final class Chat_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/recaptcha',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_recaptcha' ),
+				'permission_callback' => array( $this, 'permission_check' ),
+				'args'                => array(
+					'recaptcha_token' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -130,6 +147,34 @@ final class Chat_Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Unlock the chat overlay after a successful reCAPTCHA v3 check.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_recaptcha( WP_REST_Request $request ) {
+		if ( ! Options::is_chat_enabled() ) {
+			return new WP_Error(
+				'chathearth_disabled',
+				__( 'The chatbot is currently disabled.', 'chathearth' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$captcha = ( new Recaptcha() )->verify_or_error( (string) $request->get_param( 'recaptcha_token' ) );
+		if ( is_wp_error( $captcha ) ) {
+			return $captcha;
+		}
+
+		return new WP_REST_Response(
+			array(
+				'ok' => true,
+			),
+			200
+		);
 	}
 
 	/**

@@ -23,8 +23,8 @@
         var welcomeShown = false;
         var isOpen = false;
         var isSending = false;
-        var recaptchaWidgetId = null;
         var recaptchaUnlocked = !!(cfg.recaptchaEnabled && cfg.recaptchaPassed);
+        var recaptchaBusy = false;
 
         applyCssVars();
         buildUi();
@@ -101,7 +101,6 @@
                 "</div></div>" +
                 '<div class="chathearth-messages" role="log"></div>' +
                 '<div class="chathearth-starters"></div>' +
-                '<div class="chathearth-recaptcha"></div>' +
                 '<form class="chathearth-composer">' +
                 '<input type="text" class="chathearth-input" autocomplete="off" placeholder="' +
                 escapeAttr(cfg.i18n.placeholder) +
@@ -109,7 +108,14 @@
                 '<button type="submit" class="chathearth-send">' +
                 escapeHtml(cfg.i18n.send) +
                 "</button>" +
-                "</form></div>";
+                "</form>" +
+                '<div class="chathearth-recaptcha-overlay" hidden>' +
+                '<div class="chathearth-recaptcha-card">' +
+                '<p class="chathearth-recaptcha-prompt"></p>' +
+                '<p class="chathearth-recaptcha-status" aria-live="polite"></p>' +
+                '<button type="button" class="chathearth-recaptcha-continue"></button>' +
+                '<p class="chathearth-recaptcha-legal"></p>' +
+                "</div></div></div>";
 
             var launcherIcon = root.querySelector(".chathearth-launcher-icon");
             fetch(styles.launcherUrl)
@@ -154,6 +160,14 @@
                 "submit",
                 onSubmit,
             );
+            var recaptchaContinue = root.querySelector(
+                ".chathearth-recaptcha-continue",
+            );
+            if (recaptchaContinue) {
+                recaptchaContinue.addEventListener("click", function () {
+                    runRecaptchaUnlock();
+                });
+            }
 
             setupRecaptcha();
             renderStarters();
@@ -161,110 +175,160 @@
         }
 
         function setupRecaptcha() {
-            if (!cfg.recaptchaEnabled || !cfg.recaptchaSiteKey) {
+            var overlay = root.querySelector(".chathearth-recaptcha-overlay");
+            if (!overlay) {
                 return;
             }
 
-            var mount = root.querySelector(".chathearth-recaptcha");
-            if (!mount) {
+            if (!cfg.recaptchaEnabled || !cfg.recaptchaSiteKey) {
+                hideRecaptcha();
                 return;
             }
+
+            overlay.setAttribute("role", "dialog");
+            overlay.setAttribute("aria-modal", "true");
+            overlay.querySelector(".chathearth-recaptcha-prompt").textContent =
+                (cfg.i18n && cfg.i18n.recaptchaPrompt) ||
+                "Please verify you are human to start chatting.";
+            overlay.querySelector(
+                ".chathearth-recaptcha-continue",
+            ).textContent =
+                (cfg.i18n && cfg.i18n.recaptchaContinue) || "Continue";
+            overlay.querySelector(".chathearth-recaptcha-legal").innerHTML =
+                (cfg.i18n && cfg.i18n.recaptchaLegal) || "";
 
             if (recaptchaUnlocked) {
                 hideRecaptcha();
                 return;
             }
 
-            renderRecaptchaWidget(mount);
+            showRecaptchaAgain();
         }
 
-        function renderRecaptchaWidget(mount) {
-            mount = mount || root.querySelector(".chathearth-recaptcha");
-            if (!mount) {
+        function recaptchaStatus(text) {
+            var el = root.querySelector(".chathearth-recaptcha-status");
+            if (el) {
+                el.textContent = text || "";
+            }
+        }
+
+        function waitForGrecaptcha() {
+            return new Promise(function (resolve, reject) {
+                var started = Date.now();
+                function check() {
+                    if (
+                        typeof window.grecaptcha !== "undefined" &&
+                        typeof window.grecaptcha.execute === "function"
+                    ) {
+                        if (typeof window.grecaptcha.ready === "function") {
+                            window.grecaptcha.ready(resolve);
+                        } else {
+                            resolve();
+                        }
+                        return;
+                    }
+                    if (Date.now() - started > 10000) {
+                        reject(new Error("recaptcha-timeout"));
+                        return;
+                    }
+                    window.setTimeout(check, 250);
+                }
+                check();
+            });
+        }
+
+        function executeRecaptchaToken() {
+            return waitForGrecaptcha().then(function () {
+                return window.grecaptcha.execute(cfg.recaptchaSiteKey, {
+                    action: cfg.recaptchaAction || "chathearth",
+                });
+            });
+        }
+
+        function runRecaptchaUnlock() {
+            if (
+                !cfg.recaptchaEnabled ||
+                recaptchaUnlocked ||
+                recaptchaBusy
+            ) {
                 return;
             }
 
-            function renderWidget() {
-                if (
-                    typeof window.grecaptcha === "undefined" ||
-                    typeof window.grecaptcha.render !== "function"
-                ) {
-                    return;
-                }
-                if (recaptchaWidgetId !== null) {
-                    return;
-                }
-                try {
-                    recaptchaWidgetId = window.grecaptcha.render(mount, {
-                        sitekey: cfg.recaptchaSiteKey,
-                        size: "normal",
-                    });
-                } catch (e) {
-                    /* already rendered or API not ready */
-                }
+            recaptchaBusy = true;
+            recaptchaStatus(
+                (cfg.i18n && cfg.i18n.recaptchaWorking) || "Verifying…",
+            );
+            var btn = root.querySelector(".chathearth-recaptcha-continue");
+            if (btn) {
+                btn.disabled = true;
             }
 
-            if (
-                typeof window.grecaptcha !== "undefined" &&
-                typeof window.grecaptcha.ready === "function"
-            ) {
-                window.grecaptcha.ready(renderWidget);
-            } else {
-                var tries = 0;
-                var timer = setInterval(function () {
-                    tries += 1;
-                    if (
-                        typeof window.grecaptcha !== "undefined" &&
-                        typeof window.grecaptcha.render === "function"
-                    ) {
-                        clearInterval(timer);
-                        renderWidget();
-                    } else if (tries > 40) {
-                        clearInterval(timer);
+            executeRecaptchaToken()
+                .then(function (token) {
+                    if (!token) {
+                        throw new Error("empty-token");
                     }
-                }, 250);
-            }
-        }
-
-        function getRecaptchaToken() {
-            if (!cfg.recaptchaEnabled || recaptchaUnlocked) {
-                return "";
-            }
-            if (
-                typeof window.grecaptcha === "undefined" ||
-                recaptchaWidgetId === null
-            ) {
-                return "";
-            }
-            return window.grecaptcha.getResponse(recaptchaWidgetId) || "";
+                    return fetch(cfg.recaptchaVerifyUrl, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-WP-Nonce": cfg.nonce,
+                        },
+                        body: JSON.stringify({ recaptcha_token: token }),
+                    }).then(function (res) {
+                        return res.json().then(function (data) {
+                            return { ok: res.ok, data: data };
+                        });
+                    });
+                })
+                .then(function (result) {
+                    recaptchaBusy = false;
+                    if (btn) {
+                        btn.disabled = false;
+                    }
+                    if (result && result.ok && result.data && result.data.ok) {
+                        hideRecaptcha();
+                        recaptchaStatus("");
+                        var input = root.querySelector(".chathearth-input");
+                        if (input) {
+                            input.focus();
+                        }
+                        return;
+                    }
+                    recaptchaStatus(
+                        (result && result.data && result.data.message) ||
+                            (cfg.i18n && cfg.i18n.recaptchaFailed) ||
+                            "Verification failed. Please try again.",
+                    );
+                })
+                .catch(function () {
+                    recaptchaBusy = false;
+                    if (btn) {
+                        btn.disabled = false;
+                    }
+                    recaptchaStatus(
+                        (cfg.i18n && cfg.i18n.recaptchaFailed) ||
+                            "Verification failed. Please try again.",
+                    );
+                });
         }
 
         function hideRecaptcha() {
             recaptchaUnlocked = true;
-            var mount = root.querySelector(".chathearth-recaptcha");
-            if (mount) {
-                mount.classList.add("is-unlocked");
-                mount.setAttribute("hidden", "hidden");
+            var overlay = root.querySelector(".chathearth-recaptcha-overlay");
+            if (overlay) {
+                overlay.setAttribute("hidden", "hidden");
+                overlay.classList.remove("is-visible");
             }
         }
 
         function showRecaptchaAgain() {
             recaptchaUnlocked = false;
-            var mount = root.querySelector(".chathearth-recaptcha");
-            if (mount) {
-                mount.classList.remove("is-unlocked");
-                mount.removeAttribute("hidden");
-            }
-            if (recaptchaWidgetId === null) {
-                renderRecaptchaWidget(mount);
-                return;
-            }
-            if (typeof window.grecaptcha !== "undefined") {
-                try {
-                    window.grecaptcha.reset(recaptchaWidgetId);
-                } catch (e) {
-                    /* ignore */
-                }
+            var overlay = root.querySelector(".chathearth-recaptcha-overlay");
+            if (overlay) {
+                overlay.removeAttribute("hidden");
+                overlay.classList.add("is-visible");
             }
         }
 
@@ -277,6 +341,11 @@
             );
             ensureWelcome();
             scrollMessagesToBottom();
+            if (cfg.recaptchaEnabled && !recaptchaUnlocked) {
+                showRecaptchaAgain();
+                runRecaptchaUnlock();
+                return;
+            }
             root.querySelector(".chathearth-input").focus();
         }
 
@@ -368,20 +437,10 @@
                 return;
             }
 
-            var recaptchaToken = "";
             if (cfg.recaptchaEnabled && !recaptchaUnlocked) {
-                recaptchaToken = getRecaptchaToken();
-                if (!recaptchaToken) {
-                    messages.push({
-                        role: "assistant",
-                        content:
-                            (cfg.i18n && cfg.i18n.recaptchaRequired) ||
-                            "Please complete the CAPTCHA before sending.",
-                    });
-                    saveMessages();
-                    renderMessages();
-                    return;
-                }
+                showRecaptchaAgain();
+                runRecaptchaUnlock();
+                return;
             }
 
             messages.push({ role: "user", content: text });
@@ -411,7 +470,7 @@
                 body: JSON.stringify({
                     message: text,
                     history: historyForApi,
-                    recaptcha_token: recaptchaToken,
+                    recaptcha_token: "",
                 }),
             })
                 .then(function (res) {
