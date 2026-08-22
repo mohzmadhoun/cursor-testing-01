@@ -7,7 +7,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Status
 
-**v1.4.6** — Current-page context in chat, RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
+**v1.4.7** — Front-end chat icon stays hidden until an OpenAI key is set in Connectors. Current-page context in chat, RAG knowledge base (WordPress database only), always-on website grounding, product comparison, add-to-cart from chat, and Google reCAPTCHA v3.
 
 ## Requirements (v1)
 
@@ -17,7 +17,7 @@ WordPress chatbot plugin that uses **WordPress Connectors** and the core **AI Cl
 
 ## Features (v1)
 
-- Site-wide floating chatbot on the front end
+- Site-wide floating chatbot on the front end (hidden until OpenAI is configured in Connectors)
 - Settings under **Settings → ChatHearth - AI Chatbot** (tabs: Welcome, Protection, Appearance, AI Settings, Knowledge Base)
 - Appearance, welcome greeting, starter phrases, system prompt
 - AI provider (OpenAI) and chat model dropdowns
@@ -54,7 +54,7 @@ REST checks run in order: kill switch → reCAPTCHA (if keys set) → global lim
 2. Add your OpenAI API key under **Connectors**.
 3. Activate **ChatHearth - AI Chatbot**.
 4. Open **Settings → ChatHearth - AI Chatbot** and configure appearance, welcome text, starters, AI model, system prompt, and Protection limits.
-5. Visit the front end and use the floating launcher.
+5. Visit the front end and use the floating launcher (it appears after the OpenAI key is configured).
 
 ## Developer notes
 
@@ -81,6 +81,7 @@ plan/             Product + architecture docs
 - `chathearth_messages` (filter)
 - `chathearth_reply` (filter)
 - `chathearth_client_ip` (filter)
+- `chathearth_openai_ready` (filter)
 - `chathearth_disallowed_phrases` (filter)
 - `chathearth_content_allowed` (filter)
 

@@ -199,7 +199,7 @@ final class Settings_Page {
 			<p class="description">
 				<?php
 				echo esc_html__(
-					'Configure OpenAI API key under WordPress Connectors. This plugin does not store the API key.',
+					'Configure OpenAI API key under WordPress Connectors. This plugin does not store the API key. The chat icon stays hidden on the site until OpenAI is ready.',
 					'chathearth'
 				);
 				?>

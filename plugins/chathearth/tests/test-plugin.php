@@ -5,6 +5,7 @@
  * @package ChatHearth
  */
 
+use ChatHearth\Frontend\Assets;
 use ChatHearth\Options;
 use ChatHearth\Plugin;
 use ChatHearth\Rest\Chat_Controller;
@@ -17,6 +18,16 @@ class Test_ChatHearth_Plugin extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 		delete_option( Options::OPTION_KEY );
+	}
+
+	public function tear_down() {
+		remove_filter( 'chathearth_openai_ready', '__return_true' );
+		remove_filter( 'chathearth_openai_ready', '__return_false' );
+		wp_dequeue_script( 'chathearth-frontend' );
+		wp_deregister_script( 'chathearth-frontend' );
+		wp_dequeue_style( 'chathearth-frontend' );
+		wp_deregister_style( 'chathearth-frontend' );
+		parent::tear_down();
 	}
 
 	public function test_plugin_is_loaded() {
@@ -105,5 +116,67 @@ class Test_ChatHearth_Plugin extends WP_UnitTestCase {
 			),
 			$history
 		);
+	}
+
+	public function test_openai_ready_filter_overrides_detection() {
+		add_filter( 'chathearth_openai_ready', '__return_true' );
+		$this->assertTrue( Plugin::is_openai_ready() );
+		remove_filter( 'chathearth_openai_ready', '__return_true' );
+
+		add_filter( 'chathearth_openai_ready', '__return_false' );
+		$this->assertFalse( Plugin::is_openai_ready() );
+	}
+
+	public function test_frontend_widget_is_hidden_when_openai_is_not_ready() {
+		add_filter( 'chathearth_openai_ready', '__return_false' );
+
+		$this->assertFalse( Assets::should_show_widget() );
+
+		$assets = new Assets();
+		$assets->enqueue();
+		$this->assertFalse( wp_script_is( 'chathearth-frontend', 'enqueued' ) );
+		$this->assertFalse( wp_style_is( 'chathearth-frontend', 'enqueued' ) );
+
+		ob_start();
+		$assets->render_root();
+		$html = ob_get_clean();
+		$this->assertSame( '', $html );
+	}
+
+	public function test_frontend_widget_is_shown_when_openai_is_ready() {
+		add_filter( 'chathearth_openai_ready', '__return_true' );
+
+		$this->assertTrue( Assets::should_show_widget() );
+
+		$assets = new Assets();
+		$assets->enqueue();
+		$this->assertTrue( wp_script_is( 'chathearth-frontend', 'enqueued' ) );
+		$this->assertTrue( wp_style_is( 'chathearth-frontend', 'enqueued' ) );
+
+		ob_start();
+		$assets->render_root();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'id="chathearth-root"', $html );
+	}
+
+	public function test_frontend_widget_stays_hidden_when_chat_is_disabled() {
+		update_option(
+			Options::OPTION_KEY,
+			array(
+				'chat_enabled' => false,
+			)
+		);
+		add_filter( 'chathearth_openai_ready', '__return_true' );
+
+		$this->assertFalse( Assets::should_show_widget() );
+
+		$assets = new Assets();
+		$assets->enqueue();
+		$this->assertFalse( wp_script_is( 'chathearth-frontend', 'enqueued' ) );
+
+		ob_start();
+		$assets->render_root();
+		$html = ob_get_clean();
+		$this->assertSame( '', $html );
 	}
 }

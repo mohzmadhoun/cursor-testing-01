@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.6
+Stable tag: 1.4.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ Owned by [PalWP](https://palwp.com/). Support by [Mohammed Al-Madhoun](https://p
 * System prompt settings plus always-on website-only grounding
 * Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; embeddings stored in the WordPress database; incremental updates
 * Product comparison in chat and add to WooCommerce cart from the widget
+* The chat icon is not shown on the site until an OpenAI API key is configured under Connectors
 * Answers questions about the page the visitor is currently viewing (public WordPress content for that URL)
 * Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v3 overlay (once per hour after first success; enabled when both keys are set)
 * Conversation history in the browser (localStorage)
@@ -137,6 +138,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.7 =
+* Hide the front-end chat icon until an OpenAI API key is configured under Connectors.
+
 = 1.4.6 =
 * The chatbot can answer questions about the page the visitor is currently viewing.
 
@@ -192,6 +196,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.7 =
+The chat icon stays hidden on the site until an OpenAI API key is configured under Connectors.
 
 = 1.4.6 =
 Visitors can ask the chatbot about the page they are currently viewing.

@@ -25,6 +25,50 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #7 — Hide ChatHearth launcher without OpenAI
+
+_2026-08-22_
+
+### Summary
+
+Keeps the public chat icon off the site until WordPress Connectors has a working OpenAI setup. Visitors no longer see a launcher that cannot send messages.
+
+### Added
+
+- `Frontend\Assets::should_show_widget()` — chat enabled **and** `Plugin::is_openai_ready()`.
+- Filter `chathearth_openai_ready` always runs so tests (and custom setups) can override detection.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.7.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
+
+### Changed
+
+- Plugin version **1.4.7**.
+- Frontend CSS/JS and `#chathearth-root` are not printed when OpenAI is not ready.
+- Admin dependency notice and settings copy say the icon stays hidden until OpenAI is ready.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 53 tests / 135 assertions (ChatHearth 35 tests, 111 assertions) |
+| PHPUnit | Widget hidden when `chathearth_openai_ready` is false; shown when true and chat is enabled; still hidden when chat is disabled |
+| Homepage (OpenAI ready) | `chathearth-frontend` CSS/JS at version 1.4.7 and `#chathearth-root` present |
+| Homepage (OpenAI forced off) | No `chathearth-root`, no `chathearth-frontend` assets |
+| Admin notice | Warning includes “The chat icon stays hidden on the site until OpenAI is ready.” |
+| Installable zip | `exported-plugins/chathearth-1.4.7.zip` extracts to `chathearth/chathearth.php` version 1.4.7; `unzip -t` clean; 46 PHP files parse; tests/plan/phpunit not packed |
+
+### Notes
+
+- Admin settings remain available so the site owner can turn chat on and configure Connectors.
+- REST `/chat` still returns 503 if someone calls it without OpenAI.
+- This PR is stacked on `cursor/chathearth-current-page-36a8`.
+
+### Commits
+
+- `6187845` Hide the chat launcher until OpenAI is configured
+- `_this entry_` Record hide-launcher verification and add the 1.4.7 zip
+
+---
+
 ## PR #6 — ChatHearth current-page context
 
 _2026-08-22_

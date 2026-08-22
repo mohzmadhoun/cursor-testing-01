@@ -89,29 +89,37 @@ final class Plugin {
 
 	/**
 	 * Whether AI Client + OpenAI provider look available.
+	 *
+	 * Always reaches `chathearth_openai_ready` so callers (and tests) can
+	 * override detection even when WordPress AI support is missing.
 	 */
 	public static function is_openai_ready(): bool {
-		if ( ! function_exists( 'wp_supports_ai' ) || ! wp_supports_ai() ) {
-			return false;
+		$ready = false;
+
+		if ( function_exists( 'wp_supports_ai' ) && wp_supports_ai() && function_exists( 'wp_ai_client_prompt' ) ) {
+			if ( ! function_exists( 'is_plugin_active' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			if ( is_plugin_active( 'ai-provider-for-openai/plugin.php' ) ) {
+				if ( function_exists( 'wp_is_connector_registered' ) && ! wp_is_connector_registered( 'openai' ) ) {
+					$ready = false;
+				} else {
+					$ready = self::is_provider_configured( 'openai' );
+				}
+			}
 		}
 
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return false;
-		}
-
-		if ( ! function_exists( 'is_plugin_active' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-
-		if ( ! is_plugin_active( 'ai-provider-for-openai/plugin.php' ) ) {
-			return false;
-		}
-
-		if ( function_exists( 'wp_is_connector_registered' ) && ! wp_is_connector_registered( 'openai' ) ) {
-			return false;
-		}
-
-		return self::is_provider_configured( 'openai' );
+		/**
+		 * Whether OpenAI is ready for ChatHearth (Connectors key present).
+		 *
+		 * The public chat launcher stays hidden until this is true.
+		 *
+		 * @since 1.4.7
+		 *
+		 * @param bool $ready Detected readiness.
+		 */
+		return (bool) apply_filters( 'chathearth_openai_ready', $ready );
 	}
 
 	/**
