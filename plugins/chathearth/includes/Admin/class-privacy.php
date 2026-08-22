@@ -60,6 +60,14 @@ final class Privacy {
 			'chathearth'
 		) . '</li>';
 		$content .= '<li>' . esc_html__(
+			'If knowledge retrieval (RAG) is enabled, visitor questions are embedded and compared to indexed website content. Generated markdown copies of selected pages, posts, products, and taxonomies are stored on this site. Embeddings are stored in the WordPress database. The OpenAI Embeddings API may be used (via the Connectors key) to create those vectors.',
+			'chathearth'
+		) . '</li>';
+		$content .= '<li>' . esc_html__(
+			'If a visitor adds a product to the cart from the chat widget, that action uses the WooCommerce cart on this site. Payment still happens on the store checkout.',
+			'chathearth'
+		) . '</li>';
+		$content .= '<li>' . esc_html__(
 			'This plugin does not store the AI provider API key; that credential is managed through WordPress Connectors or the server environment.',
 			'chathearth'
 		) . '</li>';

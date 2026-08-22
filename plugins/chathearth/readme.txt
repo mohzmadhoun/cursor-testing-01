@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,10 +19,12 @@ Owned by [PalWP](https://palwp.com/). Support by [Mohammed Al-Madhoun](https://p
 **Version 1 highlights**
 
 * OpenAI via WordPress Connectors / AI Client (provider and chat model selectable in settings)
-* Settings page under Settings → ChatHearth - AI Chatbot (Welcome, Protection, Appearance, AI Settings)
+* Settings page under Settings → ChatHearth - AI Chatbot (Welcome, Protection, Appearance, AI Settings, Knowledge Base)
 * Appearance controls (shape, colors, position, popup size)
 * Welcome message and clickable starter phrases
-* System prompt settings
+* System prompt settings plus always-on website-only grounding
+* Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; embeddings stored in the WordPress database; incremental updates
+* Product comparison in chat and add to WooCommerce cart from the widget
 * Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v2 checkbox (once per hour after first success; enabled when both keys are set)
 * Conversation history in the browser (localStorage)
 * Non-streaming replies with a typing indicator and Markdown rendering
@@ -61,6 +63,16 @@ When content moderation is enabled under Settings → ChatHearth - AI Chatbot �
 OpenAI Terms of Use: https://openai.com/policies/terms-of-use/
 OpenAI Privacy Policy: https://openai.com/policies/privacy-policy/
 OpenAI API data usage policy: https://openai.com/policies/usage-policies/
+
+= OpenAI Embeddings API (knowledge base) =
+
+When the Knowledge Base (RAG) is enabled, ChatHearth creates embeddings for selected site content and for visitor questions so matching passages can be retrieved. This uses the same OpenAI API key from Connectors.
+
+* **What is sent:** markdown generated from selected pages, posts, products, taxonomies, and site/store summaries (at index time), and the visitor’s current question (at chat time).
+* **When it is sent:** only when RAG is enabled and the site owner runs a sync / content changes, or a visitor sends a chat message while RAG is on.
+* **Endpoint used:** `https://api.openai.com/v1/embeddings`
+
+Embeddings and generated markdown stay on this WordPress site (custom tables and `uploads/chathearth/kb/`). The plugin does not contact Chroma, Pinecone, or any other vector-database service.
 
 = Google reCAPTCHA v2 (optional bot/abuse protection) =
 
@@ -120,8 +132,29 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 3. Settings → ChatHearth - AI Chatbot — Protection tab (rate limits, content moderation, and optional reCAPTCHA).
 4. Settings → ChatHearth - AI Chatbot — Appearance tab (colors, shape, position, and size).
 5. Settings → ChatHearth - AI Chatbot — AI Settings tab (provider, model, and system prompt).
+6. Settings → ChatHearth - AI Chatbot — Knowledge Base tab (RAG sources, sync).
 
 == Changelog ==
+
+= 1.4.4 =
+* Knowledge base storage is the WordPress database only. No Python, Chroma, Pinecone, or extra server setup.
+
+= 1.4.3 =
+* Clarify that Chroma is an HTTP server (data files on this host are written by that process). Clearer Test vector store errors. Helper script `bin/run-chroma.sh`.
+
+= 1.4.2 =
+* Smooth expand and restore animation for the chat window.
+
+= 1.4.1 =
+* Shop-style product cards in chat (image, current and previous price, Add to cart).
+* Header control to double the chat window, with a restore control when expanded.
+* Horizontal, swipe/scrollable product cards when the panel is too narrow.
+
+= 1.4.0 =
+* Knowledge Base (RAG): markdown export of selected site content, admin include/exclude, incremental reindex.
+* Vector stores: WordPress database, self-hosted Chroma, or Pinecone.
+* Always-on website grounding and off-topic refusal, even when RAG is off.
+* Product comparison in chat and add to WooCommerce cart from the widget.
 
 = 1.3.0 =
 * Renamed plugin to ChatHearth - AI Chatbot (slug `chathearth`) with matching text domain, namespaces, options, REST routes, and asset handles.
@@ -152,6 +185,18 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.4 =
+Knowledge base embeddings now use the WordPress database only. Chroma and Pinecone settings are removed; no extra server software is required.
+
+= 1.4.2 =
+Smooth expand and restore animation for the chat window.
+
+= 1.4.1 =
+Shop-style product cards in chat and a control to double or restore the chat window size.
+
+= 1.4.0 =
+Adds a Knowledge Base tab (RAG), website-only grounding, and add-to-cart from chat.
 
 = 1.3.0 =
 Renames the plugin to ChatHearth - AI Chatbot (slug `chathearth`).

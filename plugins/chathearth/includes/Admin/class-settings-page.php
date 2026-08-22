@@ -116,6 +116,28 @@ final class Settings_Page {
 			CHATHEARTH_VERSION,
 			true
 		);
+
+		wp_localize_script(
+			'chathearth-admin',
+			'chatHearthAdmin',
+			array(
+				'statusUrl'  => esc_url_raw( rest_url( 'chathearth/v1/kb/status' ) ),
+				'syncUrl'    => esc_url_raw( rest_url( 'chathearth/v1/kb/sync' ) ),
+				'entriesUrl' => esc_url_raw( rest_url( 'chathearth/v1/kb/entries' ) ),
+				'pingUrl'    => esc_url_raw( rest_url( 'chathearth/v1/kb/ping' ) ),
+				'nonce'      => wp_create_nonce( 'wp_rest' ),
+				'i18n'       => array(
+					'syncing'    => __( 'Syncing…', 'chathearth' ),
+					'synced'     => __( 'Sync finished.', 'chathearth' ),
+					'syncFailed' => __( 'Sync failed.', 'chathearth' ),
+					'include'    => __( 'Included', 'chathearth' ),
+					'exclude'    => __( 'Excluded', 'chathearth' ),
+					'pingOk'     => __( 'Knowledge base storage is ready.', 'chathearth' ),
+					'pingFail'   => __( 'Knowledge base storage is not ready.', 'chathearth' ),
+					'empty'      => __( 'No knowledge-base entries yet. Save settings, then click Sync now.', 'chathearth' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -125,10 +147,11 @@ final class Settings_Page {
 	 */
 	private function tabs(): array {
 		return array(
-			'welcome'     => __( 'Welcome', 'chathearth' ),
-			'protection'  => __( 'Protection', 'chathearth' ),
-			'appearance'  => __( 'Appearance', 'chathearth' ),
-			'ai-settings' => __( 'AI Settings', 'chathearth' ),
+			'welcome'        => __( 'Welcome', 'chathearth' ),
+			'protection'     => __( 'Protection', 'chathearth' ),
+			'appearance'     => __( 'Appearance', 'chathearth' ),
+			'ai-settings'    => __( 'AI Settings', 'chathearth' ),
+			'knowledge-base' => __( 'Knowledge Base', 'chathearth' ),
 		);
 	}
 
@@ -428,13 +451,126 @@ final class Settings_Page {
 							<th scope="row"><label for="chathearth_system"><?php echo esc_html__( 'System prompt', 'chathearth' ); ?></label></th>
 							<td>
 								<textarea name="<?php echo esc_attr( $opt ); ?>[system_prompt]" id="chathearth_system" rows="6" class="large-text"><?php echo esc_textarea( (string) $settings['system_prompt'] ); ?></textarea>
+								<p class="description"><?php echo esc_html__( 'Extra instructions for the model. ChatHearth always adds website-only grounding (and retrieved knowledge when RAG is enabled) around this text.', 'chathearth' ); ?></p>
 							</td>
 						</tr>
 					</table>
 				</div>
 
+				<?php $this->render_knowledge_base_tab( $settings, $opt, $current_tab ); ?>
+
 				<?php submit_button( __( 'Save settings', 'chathearth' ) ); ?>
 			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Knowledge Base tab.
+	 *
+	 * @param array<string, mixed> $settings Settings.
+	 * @param string               $opt      Option key.
+	 * @param string               $current_tab Current tab.
+	 */
+	private function render_knowledge_base_tab( array $settings, string $opt, string $current_tab ): void {
+		$post_types  = Options::available_content_post_types();
+		$taxonomies  = Options::available_content_taxonomies();
+		$selected_pt = Options::rag_post_types();
+		$selected_tx = Options::rag_taxonomies();
+		?>
+		<div class="chathearth-tab-panel" id="chathearth-tab-knowledge-base" data-tab-panel="knowledge-base" role="tabpanel"<?php echo 'knowledge-base' !== $current_tab ? ' hidden' : ''; ?>>
+			<input type="hidden" name="<?php echo esc_attr( $opt ); ?>[rag_vector_store]" value="builtin" />
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Enable RAG', 'chathearth' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_enabled]" value="1" <?php checked( ! empty( $settings['rag_enabled'] ) ); ?> />
+							<?php echo esc_html__( 'Retrieve matching website content for each question and add it to the model context', 'chathearth' ); ?>
+						</label>
+						<p class="description"><?php echo esc_html__( 'The assistant stays limited to this website even when RAG is off. Turn this on after selecting sources and running Sync now.', 'chathearth' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Storage', 'chathearth' ); ?></th>
+					<td>
+						<p><?php echo esc_html__( "Indexed passages are stored in this site's WordPress database. Installing ChatHearth is enough. No Python, Chroma, Pinecone, or other extra software is required.", 'chathearth' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Post types', 'chathearth' ); ?></th>
+					<td>
+						<?php foreach ( $post_types as $slug => $label ) : ?>
+							<label class="chathearth-check-row">
+								<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_post_types][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $selected_pt, true ) ); ?> />
+								<?php echo esc_html( $label ); ?>
+								<code><?php echo esc_html( $slug ); ?></code>
+							</label>
+						<?php endforeach; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Taxonomies', 'chathearth' ); ?></th>
+					<td>
+						<?php foreach ( $taxonomies as $slug => $label ) : ?>
+							<label class="chathearth-check-row">
+								<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_taxonomies][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $selected_tx, true ) ); ?> />
+								<?php echo esc_html( $label ); ?>
+								<code><?php echo esc_html( $slug ); ?></code>
+							</label>
+						<?php endforeach; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Other site data', 'chathearth' ); ?></th>
+					<td>
+						<label class="chathearth-check-row">
+							<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_include_site_identity]" value="1" <?php checked( ! empty( $settings['rag_include_site_identity'] ) ); ?> />
+							<?php echo esc_html__( 'Site name, tagline, URL, and public page list', 'chathearth' ); ?>
+						</label>
+						<label class="chathearth-check-row">
+							<input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[rag_include_woocommerce]" value="1" <?php checked( ! empty( $settings['rag_include_woocommerce'] ) ); ?> />
+							<?php echo esc_html__( 'WooCommerce shop URLs, currency, and categories (when WooCommerce is active)', 'chathearth' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="chathearth_rag_top_k"><?php echo esc_html__( 'Passages per question', 'chathearth' ); ?></label></th>
+					<td>
+						<input name="<?php echo esc_attr( $opt ); ?>[rag_top_k]" id="chathearth_rag_top_k" type="number" min="1" max="12" value="<?php echo esc_attr( (string) $settings['rag_top_k'] ); ?>" class="small-text" />
+						<label for="chathearth_rag_chunk" class="chathearth-inline-label"><?php echo esc_html__( 'Chunk size', 'chathearth' ); ?></label>
+						<input name="<?php echo esc_attr( $opt ); ?>[rag_chunk_size]" id="chathearth_rag_chunk" type="number" min="400" max="4000" value="<?php echo esc_attr( (string) $settings['rag_chunk_size'] ); ?>" class="small-text" />
+					</td>
+				</tr>
+			</table>
+
+			<div class="chathearth-kb-toolbar">
+				<button type="button" class="button button-primary" id="chathearth-kb-sync"><?php echo esc_html__( 'Sync now', 'chathearth' ); ?></button>
+				<button type="button" class="button" id="chathearth-kb-ping"><?php echo esc_html__( 'Test knowledge base', 'chathearth' ); ?></button>
+				<span class="chathearth-kb-status" id="chathearth-kb-status" aria-live="polite"></span>
+			</div>
+			<p class="description" id="chathearth-kb-counts"></p>
+
+			<div class="chathearth-kb-entries-wrap">
+				<p>
+					<label for="chathearth-kb-search"><?php echo esc_html__( 'Search entries', 'chathearth' ); ?></label>
+					<input type="search" id="chathearth-kb-search" class="regular-text" />
+				</p>
+				<table class="widefat striped" id="chathearth-kb-table">
+					<thead>
+						<tr>
+							<th><?php echo esc_html__( 'Title', 'chathearth' ); ?></th>
+							<th><?php echo esc_html__( 'Source', 'chathearth' ); ?></th>
+							<th><?php echo esc_html__( 'Status', 'chathearth' ); ?></th>
+							<th><?php echo esc_html__( 'In RAG', 'chathearth' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr><td colspan="4"><?php echo esc_html__( 'Loading…', 'chathearth' ); ?></td></tr>
+					</tbody>
+				</table>
+				<p class="chathearth-kb-pager" id="chathearth-kb-pager"></p>
+			</div>
 		</div>
 		<?php
 	}

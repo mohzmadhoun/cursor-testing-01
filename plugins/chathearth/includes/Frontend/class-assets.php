@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use ChatHearth\Commerce\Cart_Service;
 use ChatHearth\Options;
 use ChatHearth\Rest\Chat_Controller;
 use ChatHearth\Security\Recaptcha;
@@ -70,12 +71,14 @@ final class Assets {
 		);
 
 		$settings = Options::all();
+		$woo      = Cart_Service::is_available();
 
 		wp_localize_script(
 			'chathearth-frontend',
 			'chatHearth',
 			array(
 				'restUrl'          => esc_url_raw( rest_url( Chat_Controller::REST_NAMESPACE . '/chat' ) ),
+				'cartUrl'          => esc_url_raw( rest_url( Chat_Controller::REST_NAMESPACE . '/cart' ) ),
 				'nonce'            => wp_create_nonce( Chat_Controller::NONCE_ACTION ),
 				'welcome'          => (string) $settings['welcome_message'],
 				'starters'         => Options::starter_phrases_list(),
@@ -84,6 +87,9 @@ final class Assets {
 				'recaptchaEnabled' => $recaptcha_enabled,
 				'recaptchaSiteKey' => $recaptcha_enabled ? (string) $settings['recaptcha_site_key'] : '',
 				'recaptchaPassed'  => $recaptcha_passed,
+				'woocommerce'      => $woo,
+				'storeCartUrl'     => $woo ? Cart_Service::cart_url() : '',
+				'storeCheckoutUrl' => $woo ? Cart_Service::checkout_url() : '',
 				'i18n'             => array(
 					'placeholder'       => __( 'Type your message…', 'chathearth' ),
 					'send'              => __( 'Send', 'chathearth' ),
@@ -93,6 +99,15 @@ final class Assets {
 					'error'             => __( 'Sorry, something went wrong. Please try again.', 'chathearth' ),
 					'thinking'          => __( 'Thinking…', 'chathearth' ),
 					'recaptchaRequired' => __( 'Please complete the CAPTCHA before sending.', 'chathearth' ),
+					'addToCart'         => __( 'Add to cart', 'chathearth' ),
+					'addedToCart'       => __( 'Added to cart.', 'chathearth' ),
+					'viewCart'          => __( 'View cart', 'chathearth' ),
+					'checkout'          => __( 'Checkout', 'chathearth' ),
+					'sources'           => __( 'Sources', 'chathearth' ),
+					'compareThese'      => __( 'Compare these products', 'chathearth' ),
+					'cartError'         => __( 'Could not add that product to the cart.', 'chathearth' ),
+					'expand'            => __( 'Double chat size', 'chathearth' ),
+					'restore'           => __( 'Restore chat size', 'chathearth' ),
 				),
 				'styles'           => array(
 					'iconShape'            => (string) $settings['icon_shape'],

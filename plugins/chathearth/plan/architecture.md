@@ -64,22 +64,21 @@ interface Text_Generator_Interface {
 
 ### RAG
 
-- Toggle in settings; document CRUD + versioning; optional site content → markdown by post type.
-- Retrieval should hook `chathearth_system_prompt` / `chathearth_before_generate` to inject context.
-- **Local vector store:** undecided (SQLite vs Chroma). Choose at first RAG release.
-
-Suggested contract (doc-only until RAG ships):
+- Toggle in **Settings → Knowledge Base**. Site content is exported to markdown under `uploads/chathearth/kb/`, with a custom table of entries and chunks.
+- Retrieval hooks `chathearth_system_prompt` (priority 20). Always-on site grounding runs at priority 5 even when RAG is off.
+- **Vector store:** embeddings in `wp_chathearth_kb_chunks` with cosine search in PHP. No extra process. Filter `chathearth_vector_store` for custom PHP implementations.
 
 ```php
 interface Vector_Store_Interface {
-    public function upsert( string $id, string $content, array $embedding, array $meta ): bool;
-    public function delete( string $id ): bool;
-    /** @return list<array{id:string,score:float,content:string}> */
+    public function upsert( array $records ): bool;
+    public function delete( array $ids ): bool;
+    /** @return list<array{id:string,score:float,content:string,meta:array}> */
     public function query( array $embedding, int $limit = 5 ): array;
+    public function ping(): bool;
 }
 ```
 
-Remote stores (Pinecone, Supabase, …) should implement the same interface.
+Incremental updates hook `save_post`, terms, and WooCommerce product changes and re-embed only the affected source id when the markdown hash changes. See [`cursor-milestone-01.md`](cursor-milestone-01.md).
 
 ### N8N
 

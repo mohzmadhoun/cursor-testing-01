@@ -17,7 +17,13 @@ use ChatHearth\Admin\Admin_Notices;
 use ChatHearth\Admin\Privacy;
 use ChatHearth\Admin\Settings_Page;
 use ChatHearth\Frontend\Assets;
+use ChatHearth\Rag\Indexer;
+use ChatHearth\Rag\Retriever;
+use ChatHearth\Rag\Schema;
+use ChatHearth\Rag\Site_Grounding;
+use ChatHearth\Rest\Cart_Controller;
 use ChatHearth\Rest\Chat_Controller;
+use ChatHearth\Rest\Kb_Controller;
 
 /**
  * Plugin singleton.
@@ -49,16 +55,23 @@ final class Plugin {
 		if ( false === get_option( Options::OPTION_KEY ) ) {
 			add_option( Options::OPTION_KEY, Options::defaults() );
 		}
+		Schema::install();
+		Indexer::instance()->ensure_cron();
 	}
 
 	/**
 	 * Wire hooks.
 	 */
 	public function init(): void {
+		Schema::maybe_install();
+		Options::maybe_use_wordpress_vector_store();
 		( new Admin_Notices() )->register();
 		( new Privacy() )->register();
 		( new Settings_Page() )->register();
 		( new Assets() )->register();
+		Indexer::instance()->register();
+		( new Site_Grounding() )->register();
+		Retriever::instance()->register();
 
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
 	}
@@ -68,6 +81,8 @@ final class Plugin {
 	 */
 	public function register_rest(): void {
 		( new Chat_Controller() )->register_routes();
+		( new Cart_Controller() )->register_routes();
+		( new Kb_Controller() )->register_routes();
 	}
 
 	/**

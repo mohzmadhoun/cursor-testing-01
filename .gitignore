@@ -6,4 +6,5 @@ node_modules/
 .phpunit.cache/
 /build/
 *.zip
+!/exported-plugins/*.zip
 .DS_Store

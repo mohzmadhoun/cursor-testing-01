@@ -81,6 +81,20 @@
                 '">' +
                 escapeHtml(cfg.i18n.clear) +
                 "</button>" +
+                '<button type="button" class="chathearth-expand" aria-label="' +
+                escapeAttr((cfg.i18n && cfg.i18n.expand) || "Double chat size") +
+                '" title="' +
+                escapeAttr((cfg.i18n && cfg.i18n.expand) || "Double chat size") +
+                '">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+                "</button>" +
+                '<button type="button" class="chathearth-restore" hidden aria-label="' +
+                escapeAttr((cfg.i18n && cfg.i18n.restore) || "Restore chat size") +
+                '" title="' +
+                escapeAttr((cfg.i18n && cfg.i18n.restore) || "Restore chat size") +
+                '">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+                "</button>" +
                 '<button type="button" class="chathearth-close" aria-label="' +
                 escapeAttr(cfg.i18n.close) +
                 '">&times;</button>' +
@@ -123,6 +137,18 @@
             root.querySelector(".chathearth-clear").addEventListener(
                 "click",
                 clearChat,
+            );
+            root.querySelector(".chathearth-expand").addEventListener(
+                "click",
+                function () {
+                    setExpanded(true);
+                },
+            );
+            root.querySelector(".chathearth-restore").addEventListener(
+                "click",
+                function () {
+                    setExpanded(false);
+                },
             );
             root.querySelector(".chathearth-composer").addEventListener(
                 "submit",
@@ -256,11 +282,24 @@
 
         function closePanel() {
             isOpen = false;
+            setExpanded(false);
             root.querySelector(".chathearth-panel").classList.remove("is-open");
             root.querySelector(".chathearth-launcher").setAttribute(
                 "aria-expanded",
                 "false",
             );
+        }
+
+        function setExpanded(on) {
+            root.classList.toggle("is-expanded", !!on);
+            var expandBtn = root.querySelector(".chathearth-expand");
+            var restoreBtn = root.querySelector(".chathearth-restore");
+            if (expandBtn) {
+                expandBtn.hidden = !!on;
+            }
+            if (restoreBtn) {
+                restoreBtn.hidden = !on;
+            }
         }
 
         function ensureWelcome() {
@@ -408,6 +447,8 @@
                         messages.push({
                             role: "assistant",
                             content: result.data.reply,
+                            sources: result.data.sources || [],
+                            products: result.data.products || [],
                         });
                     }
                     saveMessages();
@@ -464,6 +505,10 @@
                     bubble.textContent = m.content;
                 }
                 row.appendChild(bubble);
+                if (m.role === "assistant") {
+                    appendSources(row, m.sources);
+                    appendProducts(row, m.products);
+                }
                 list.appendChild(row);
             });
 
@@ -519,7 +564,7 @@
                 '<code class="chathearth-md-code">$1</code>',
             );
             source = source.replace(
-                /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g,
                 '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
             );
             source = source.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -598,6 +643,34 @@
                     continue;
                 }
 
+                if (isTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+                    var tableRows = [];
+                    while (i < lines.length && isTableRow(lines[i])) {
+                        if (isTableSeparator(lines[i])) {
+                            i++;
+                            continue;
+                        }
+                        tableRows.push(parseTableRow(lines[i]));
+                        i++;
+                    }
+                    if (tableRows.length) {
+                        var head = tableRows.shift();
+                        var body = tableRows
+                            .map(function (cells) {
+                                return "<tr>" + cells.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+                            })
+                            .join("");
+                        out.push(
+                            '<table class="chathearth-md-table"><thead><tr>' +
+                                head.map(function (c) { return "<th>" + c + "</th>"; }).join("") +
+                                "</tr></thead><tbody>" +
+                                body +
+                                "</tbody></table>"
+                        );
+                    }
+                    continue;
+                }
+
                 if (/^<(?:h[34]|pre)\b/.test(line.trim())) {
                     out.push(line);
                     i++;
@@ -617,7 +690,7 @@
                         next.trim() === "" ||
                         /^[-*] /.test(next) ||
                         /^\d+\. /.test(next) ||
-                        /^<(?:h[34]|pre|ul|ol)\b/.test(next.trim())
+                        /^<(?:h[34]|pre|ul|ol|table)\b/.test(next.trim())
                     ) {
                         break;
                     }
@@ -630,6 +703,198 @@
             }
 
             return out.join("");
+        }
+
+        function isTableRow(line) {
+            return /^\s*\|.+\|\s*$/.test(String(line || ""));
+        }
+
+        function isTableSeparator(line) {
+            return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(String(line || ""));
+        }
+
+        function parseTableRow(line) {
+            return String(line || "")
+                .trim()
+                .replace(/^\|/, "")
+                .replace(/\|$/, "")
+                .split("|")
+                .map(function (cell) {
+                    return cell.trim();
+                });
+        }
+
+        function appendSources(row, sources) {
+            if (!sources || !sources.length) {
+                return;
+            }
+            var wrap = document.createElement("div");
+            wrap.className = "chathearth-sources";
+            var label = document.createElement("span");
+            label.className = "chathearth-sources-label";
+            label.textContent = (cfg.i18n && cfg.i18n.sources) || "Sources";
+            wrap.appendChild(label);
+            sources.forEach(function (src) {
+                if (!src || !src.url) {
+                    return;
+                }
+                var a = document.createElement("a");
+                a.href = src.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "chathearth-source-chip";
+                a.textContent = src.title || src.url;
+                wrap.appendChild(a);
+            });
+            row.appendChild(wrap);
+        }
+
+        function appendProducts(row, products) {
+            if (!cfg.woocommerce || !products || !products.length) {
+                return;
+            }
+            var wrap = document.createElement("div");
+            wrap.className = "chathearth-products";
+            var scroller = document.createElement("div");
+            scroller.className = "chathearth-product-scroller";
+            products.forEach(function (product) {
+                var card = document.createElement("article");
+                card.className = "chathearth-product";
+                var media = document.createElement(product.url ? "a" : "div");
+                media.className = "chathearth-product-media";
+                if (product.url) {
+                    media.href = product.url;
+                    media.target = "_blank";
+                    media.rel = "noopener noreferrer";
+                }
+                if (product.image) {
+                    var img = document.createElement("img");
+                    img.src = product.image;
+                    img.alt = product.image_alt || product.name || "";
+                    img.loading = "lazy";
+                    media.appendChild(img);
+                } else {
+                    media.className += " is-empty";
+                }
+                card.appendChild(media);
+                var name = document.createElement("a");
+                name.className = "chathearth-product-name";
+                name.href = product.url || "#";
+                name.target = "_blank";
+                name.rel = "noopener noreferrer";
+                name.textContent = product.name || "Product";
+                card.appendChild(name);
+                var priceWrap = document.createElement("div");
+                priceWrap.className = "chathearth-product-price";
+                if (product.regular_price && product.regular_price !== product.price) {
+                    var was = document.createElement("del");
+                    was.className = "chathearth-price-regular";
+                    was.textContent = product.regular_price;
+                    priceWrap.appendChild(was);
+                }
+                if (product.price) {
+                    var now = document.createElement(
+                        product.regular_price && product.regular_price !== product.price
+                            ? "ins"
+                            : "span"
+                    );
+                    now.className = "chathearth-price-current";
+                    now.textContent = product.price;
+                    priceWrap.appendChild(now);
+                }
+                if (priceWrap.childNodes.length) {
+                    card.appendChild(priceWrap);
+                }
+                if (product.purchasable) {
+                    var btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className =
+                        "chathearth-add-cart wp-block-button__link wp-element-button wc-block-components-product-button__button has-small-font-size has-text-align-center";
+                    btn.textContent = (cfg.i18n && cfg.i18n.addToCart) || "Add to cart";
+                    btn.addEventListener("click", function () {
+                        addToCart(product, btn, wrap);
+                    });
+                    card.appendChild(btn);
+                }
+                scroller.appendChild(card);
+            });
+            wrap.appendChild(scroller);
+            if (products.length >= 2) {
+                var compare = document.createElement("button");
+                compare.type = "button";
+                compare.className = "chathearth-compare";
+                compare.textContent = (cfg.i18n && cfg.i18n.compareThese) || "Compare these products";
+                compare.addEventListener("click", function () {
+                    var names = products
+                        .map(function (p) {
+                            return p.name || ("product " + p.id);
+                        })
+                        .join(" vs ");
+                    sendMessage(
+                        "Compare " +
+                            names +
+                            " in a markdown table covering price, stock, and key differences. Use only catalog facts and include product links."
+                    );
+                });
+                wrap.appendChild(compare);
+            }
+            row.appendChild(wrap);
+        }
+
+        function addToCart(product, button, wrap) {
+            if (!cfg.cartUrl) {
+                return;
+            }
+            button.disabled = true;
+            fetch(cfg.cartUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-WP-Nonce": cfg.nonce,
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: 1,
+                }),
+            })
+                .then(function (res) {
+                    return res.json().then(function (data) {
+                        return { ok: res.ok, data: data };
+                    });
+                })
+                .then(function (result) {
+                    button.disabled = false;
+                    var note = wrap.querySelector(".chathearth-cart-note");
+                    if (!note) {
+                        note = document.createElement("p");
+                        note.className = "chathearth-cart-note";
+                        wrap.appendChild(note);
+                    }
+                    if (!result.ok) {
+                        note.textContent = (cfg.i18n && cfg.i18n.cartError) || "Could not add that product to the cart.";
+                        return;
+                    }
+                    var cartUrl = (result.data && result.data.cart_url) || cfg.storeCartUrl;
+                    var checkoutUrl = (result.data && result.data.checkout_url) || cfg.storeCheckoutUrl;
+                    note.innerHTML =
+                        escapeHtml((cfg.i18n && cfg.i18n.addedToCart) || "Added to cart.") +
+                        ' <a href="' +
+                        escapeHtml(cartUrl) +
+                        '">' +
+                        escapeHtml((cfg.i18n && cfg.i18n.viewCart) || "View cart") +
+                        "</a>" +
+                        (checkoutUrl
+                            ? ' · <a href="' +
+                              escapeHtml(checkoutUrl) +
+                              '">' +
+                              escapeHtml((cfg.i18n && cfg.i18n.checkout) || "Checkout") +
+                              "</a>"
+                            : "");
+                })
+                .catch(function () {
+                    button.disabled = false;
+                });
         }
 
         function loadMessages() {
@@ -652,6 +917,8 @@
                         role: m.role,
                         content: m.content,
                         localOnly: !!m.localOnly,
+                        sources: m.sources || [],
+                        products: m.products || [],
                     };
                 });
                 localStorage.setItem(cfg.storageKey, JSON.stringify(toStore));
