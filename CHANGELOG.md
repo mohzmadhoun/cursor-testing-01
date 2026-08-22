@@ -25,6 +25,53 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #6 — ChatHearth current-page context
+
+_2026-08-22_
+
+### Summary
+
+Lets visitors ask about the page they are looking at. The widget sends that page’s id and URL with each chat request; the server loads the matching public WordPress post or term and injects it into the system prompt.
+
+### Added
+
+- `Current_Page` resolver (priority 10 on `chathearth_system_prompt`).
+- REST fields `page_id`, `page_type`, `page_taxonomy`, `page_url` on `POST /chathearth/v1/chat`.
+- “Tell me about this page” starter chip when the widget knows the current URL.
+- Filter `chathearth_current_page` for custom documents.
+- Installable plugin zip at `exported-plugins/chathearth-1.4.6.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
+
+### Changed
+
+- Plugin version **1.4.6**.
+- Site grounding rules mention the current page for “this page” / “here” questions.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 49 tests / 122 assertions (ChatHearth 31 tests, 98 assertions) |
+| Homepage widget | `page` payload is `{id:0, type:front, url:http://127.0.0.1:8080/}` |
+| `/my-account/` | `page` payload is `{id:9, type:post, title:My account}` |
+| `/product/hat/` | `page` payload is `{id:29, type:post, title:Hat}` |
+| WP-CLI inject | Published page and product markdown appear under `## Current page`; product pages also attach a catalog card |
+| Installable zip | `exported-plugins/chathearth-1.4.6.zip` extracts to `chathearth/chathearth.php` version 1.4.6; `unzip -t` clean; 46 PHP files parse; tests/plan/phpunit not packed |
+
+### Notes
+
+- The browser does not send page HTML. The server looks up public content by id/URL on this site only.
+- Drafts, private posts, and password-protected posts are skipped.
+- Off-site URLs are ignored.
+- Recaptcha unit tests ignore `CHATHEARTH_RECAPTCHA_*` environment secrets so they still cover settings-only keys when those secrets are present in Cloud Agents.
+
+### Commits
+
+- `2c8edc9` Let chat answer questions about the current page
+- `71e4e92` Record current-page verification
+- `_this entry_` Add installable ChatHearth 1.4.6 zip
+
+---
+
 ## PR #5 — ChatHearth reCAPTCHA v3 overlay
 
 _2026-08-21_

@@ -520,6 +520,18 @@ final class Options {
 	 * @param string $name Constant and environment variable name.
 	 */
 	private static function env_or_constant( string $name ): string {
+		/**
+		 * Short-circuit environment/constant secret lookup (tests).
+		 *
+		 * Return a string to use that value (empty string disables the env key).
+		 *
+		 * @param string|null $pre  Existing override.
+		 * @param string      $name Variable name.
+		 */
+		$pre = apply_filters( 'chathearth_pre_env_secret', null, $name );
+		if ( is_string( $pre ) ) {
+			return trim( $pre );
+		}
 		if ( defined( $name ) ) {
 			$value = constant( $name );
 			if ( is_string( $value ) || is_numeric( $value ) ) {

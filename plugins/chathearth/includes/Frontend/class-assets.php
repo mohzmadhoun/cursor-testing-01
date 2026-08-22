@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use ChatHearth\Commerce\Cart_Service;
 use ChatHearth\Options;
+use ChatHearth\Rag\Current_Page;
 use ChatHearth\Rest\Chat_Controller;
 use ChatHearth\Security\Recaptcha;
 
@@ -85,6 +86,7 @@ final class Assets {
 				'recaptchaVerifyUrl' => esc_url_raw( rest_url( Chat_Controller::REST_NAMESPACE . '/recaptcha' ) ),
 				'cartUrl'            => esc_url_raw( rest_url( Chat_Controller::REST_NAMESPACE . '/cart' ) ),
 				'nonce'              => wp_create_nonce( Chat_Controller::NONCE_ACTION ),
+				'page'               => Current_Page::frontend_payload(),
 				'welcome'            => (string) $settings['welcome_message'],
 				'starters'           => Options::starter_phrases_list(),
 				'headerTitle'        => (string) $settings['header_title'],
@@ -121,6 +123,7 @@ final class Assets {
 					'checkout'          => __( 'Checkout', 'chathearth' ),
 					'sources'           => __( 'Sources', 'chathearth' ),
 					'compareThese'      => __( 'Compare these products', 'chathearth' ),
+					'aboutThisPage'     => __( 'Tell me about this page', 'chathearth' ),
 					'cartError'         => __( 'Could not add that product to the cart.', 'chathearth' ),
 					'expand'            => __( 'Double chat size', 'chathearth' ),
 					'restore'           => __( 'Restore chat size', 'chathearth' ),

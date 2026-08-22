@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.4.5
+Stable tag: 1.4.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ Owned by [PalWP](https://palwp.com/). Support by [Mohammed Al-Madhoun](https://p
 * System prompt settings plus always-on website-only grounding
 * Knowledge Base (RAG): markdown from selected pages, posts, custom post types, products, and taxonomies; embeddings stored in the WordPress database; incremental updates
 * Product comparison in chat and add to WooCommerce cart from the widget
+* Answers questions about the page the visitor is currently viewing (public WordPress content for that URL)
 * Protection: kill switch, per-IP and site-wide (global) rate limits, escalation email/admin notice, optional auto-disable, max message length, content moderation (keyword list + optional OpenAI Moderations API), optional Google reCAPTCHA v3 overlay (once per hour after first success; enabled when both keys are set)
 * Conversation history in the browser (localStorage)
 * Non-streaming replies with a typing indicator and Markdown rendering
@@ -43,7 +44,7 @@ This plugin relies on the following third-party services to work. It does not se
 
 The chatbot generates replies using OpenAI's API, accessed through WordPress Connectors / the core AI Client and the required "AI Provider for OpenAI" plugin. This is the core service that produces the assistant's answers.
 
-* **What is sent:** the text of the message a visitor types, the recent conversation history from that visitor's browser session, the site's configured system prompt, and the selected model name.
+* **What is sent:** the text of the message a visitor types, the recent conversation history from that visitor's browser session, the site's configured system prompt, the URL and WordPress id of the page they are viewing (so the assistant can load that page's public content from WordPress — not the raw HTML from the browser), and the selected model name.
 * **When it is sent:** only when a visitor actively submits a message in the chat widget. Nothing is sent on page load or in the background.
 * **Where the API key lives:** the OpenAI API key is configured under WordPress Connectors (or the `OPENAI_API_KEY` environment variable / constant). This plugin does not store the API key and does not store chat transcripts in the WordPress database.
 
@@ -136,6 +137,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.6 =
+* The chatbot can answer questions about the page the visitor is currently viewing.
+
 = 1.4.5 =
 * Replace Google reCAPTCHA v2 with v3. A white, translucent, blurred overlay covers the chat until verification succeeds.
 
@@ -188,6 +192,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.6 =
+Visitors can ask the chatbot about the page they are currently viewing.
 
 = 1.4.5 =
 Chat uses Google reCAPTCHA v3 with a white blurred overlay instead of a v2 checkbox.
