@@ -18,12 +18,26 @@ class Test_ChatHearth_Recaptcha extends WP_UnitTestCase {
 		parent::set_up();
 		delete_option( Options::OPTION_KEY );
 		unset( $_COOKIE['chathearth_human'] );
+		add_filter( 'chathearth_pre_env_secret', array( $this, 'ignore_env_secrets' ), 10, 2 );
 		add_filter( 'chathearth_pre_recaptcha_verify', array( $this, 'fake_google' ), 10, 2 );
 	}
 
 	public function tear_down() {
+		remove_filter( 'chathearth_pre_env_secret', array( $this, 'ignore_env_secrets' ), 10 );
 		remove_filter( 'chathearth_pre_recaptcha_verify', array( $this, 'fake_google' ), 10 );
 		parent::tear_down();
+	}
+
+	/**
+	 * Ignore Cloud Agent recaptcha environment secrets so these tests cover settings-only keys.
+	 *
+	 * @param mixed  $pre  Existing value.
+	 * @param string $name Variable name.
+	 */
+	public function ignore_env_secrets( $pre, string $name ): string {
+		unset( $pre, $name );
+
+		return '';
 	}
 
 	/**

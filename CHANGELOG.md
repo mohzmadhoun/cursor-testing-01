@@ -49,17 +49,23 @@ Lets visitors ask about the page they are looking at. The widget sends that page
 
 | Check | Result |
 | --- | --- |
-| `composer check` | Pending in this commit; filled after tests |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; 49 tests / 122 assertions (ChatHearth 31 tests, 98 assertions) |
+| Homepage widget | `page` payload is `{id:0, type:front, url:http://127.0.0.1:8080/}` |
+| `/my-account/` | `page` payload is `{id:9, type:post, title:My account}` |
+| `/product/hat/` | `page` payload is `{id:29, type:post, title:Hat}` |
+| WP-CLI inject | Published page and product markdown appear under `## Current page`; product pages also attach a catalog card |
 
 ### Notes
 
 - The browser does not send page HTML. The server looks up public content by id/URL on this site only.
 - Drafts, private posts, and password-protected posts are skipped.
 - Off-site URLs are ignored.
+- Recaptcha unit tests ignore `CHATHEARTH_RECAPTCHA_*` environment secrets so they still cover settings-only keys when those secrets are present in Cloud Agents.
 
 ### Commits
 
-- `_this entry_` Let chat answer questions about the current page
+- `2c8edc9` Let chat answer questions about the current page
+- `_this entry_` Record current-page verification
 
 ---
 
