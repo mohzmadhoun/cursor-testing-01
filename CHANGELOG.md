@@ -36,25 +36,36 @@ Stops themes such as WoodMart from restyling the chat launcher and header button
 ### Changed
 
 - Plugin version **1.4.9**.
-- Launcher padding is 5px; header Clear / expand / restore / close buttons reset background, padding, and font size under `.chathearth-root`.
+- Widget buttons inside `.chathearth-root` reset first, then launcher, header, starter, send, and continue styles are locked with `body .chathearth-root button…` so themes such as WoodMart cannot restyle them.
+- Launcher padding is 5px; Clear / expand / restore / close use a transparent background, compact padding, 12px Clear text, and a 20px close ×.
 - Admin JS appends `page` / `search` with `&` when the REST URL already has `?rest_route=`, so the list request is not `.../entries?page=1`.
+
+### Added
+
+- Installable plugin zip at `exported-plugins/chathearth-1.4.9.zip` (WordPress plugin folder `chathearth/`; tests and plan docs omitted).
 
 ### Verification
 
 | Check | Result |
 | --- | --- |
-| `composer check` | Pending |
-| Knowledge Base entries URL | Pending |
-| Homepage widget | Pending |
+| `composer check` | PHPCS clean; PHPStan level 5 clean; ChatHearth 37 tests / 123 assertions (workspace 55 tests / 147 assertions) |
+| Knowledge Base entries URL | `index.php?rest_route=/chathearth/v1/kb/entries?page=1` returns `rest_no_route` 404; the same path with `&page=1` returns 200 and lists rows while RAG is off |
+| Homepage widget | With a WoodMart-like `button { background/padding !important }` override, the launcher stays a compact dark circle (5px padding) and Clear / expand / close stay transparent on the dark header |
+| Installable zip | `exported-plugins/chathearth-1.4.9.zip` extracts to `chathearth/chathearth.php` version 1.4.9; 46 PHP files parse; tests/plan/phpunit/bin not packed |
 
 ### Notes
 
 - Syncing before enabling RAG is supported; the empty table was a 404 on the entries route, not a RAG-off restriction.
 - This PR is stacked on `cursor/chathearth-plugin-check-36a8`.
+- WoodMart is not installed in this environment; widget CSS was verified against an injected `button { … !important }` rule that matches how WoodMart styles plugin buttons.
 
 ### Commits
 
-- `_this entry_` Reset chat buttons and fix Knowledge Base entries URLs
+- `d291733` Reset chat buttons and fix Knowledge Base entries URLs
+- `3787c65` Keep WoodMart from forcing min-height on header buttons
+- `55dda0d` Join Knowledge Base list query args without a second question mark
+- `1a10953` Keep WoodMart from restyling ChatHearth widget buttons
+- `_this entry_` Record 1.4.9 verification and add the installable zip
 
 ---
 
