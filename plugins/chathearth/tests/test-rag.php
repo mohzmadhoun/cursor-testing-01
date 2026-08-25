@@ -347,7 +347,60 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$routes = $wp_rest_server->get_routes();
 
 		$this->assertArrayHasKey( '/chathearth/v1/kb/sync', $routes );
+		$this->assertArrayHasKey( '/chathearth/v1/kb/status', $routes );
+		$this->assertArrayHasKey( '/chathearth/v1/kb/entries', $routes );
 		$this->assertArrayHasKey( '/chathearth/v1/cart', $routes );
+	}
+
+	public function test_kb_entries_query_on_plain_permalinks_keeps_rest_route() {
+		$base = home_url( '/index.php?rest_route=/chathearth/v1/kb/entries' );
+		$url  = add_query_arg(
+			array(
+				'page'   => 1,
+				'search' => 'hat',
+			),
+			$base
+		);
+
+		$query = array();
+		wp_parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
+
+		$this->assertSame( '/chathearth/v1/kb/entries', $query['rest_route'] );
+		$this->assertSame( '1', (string) $query['page'] );
+		$this->assertSame( 'hat', $query['search'] );
+		$this->assertStringNotContainsString( 'entries?page=', $url );
+		$this->assertStringContainsString( 'entries&page=', $url );
+	}
+
+	public function test_kb_entries_lists_rows_when_rag_is_disabled() {
+		$this->assertFalse( Options::is_rag_enabled() );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$repo = new Kb_Repository();
+		$repo->upsert_document(
+			array(
+				'source_id'   => 'post:99',
+				'object_type' => 'post',
+				'object_id'   => 99,
+				'post_type'   => 'page',
+				'title'       => 'Shipping',
+				'url'         => 'http://example.test/shipping',
+				'markdown'    => 'We ship worldwide.',
+			)
+		);
+
+		$controller = new Kb_Controller();
+		$request    = new WP_REST_Request( 'GET', '/chathearth/v1/kb/entries' );
+		$request->set_param( 'page', 1 );
+		$response = $controller->handle_entries( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertGreaterThanOrEqual( 1, (int) $data['total'] );
+		$this->assertNotEmpty( $data['items'] );
+		$this->assertSame( 'post:99', $data['items'][0]['source_id'] );
 	}
 
 	public function test_builtin_ping_status_is_ready() {

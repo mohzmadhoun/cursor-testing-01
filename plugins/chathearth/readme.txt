@@ -4,7 +4,7 @@ Tags: chatbot, ai, openai, connectors, customer-support
 Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.8
+Stable tag: 1.4.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,10 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 
 == Changelog ==
 
+= 1.4.9 =
+* Reset launcher and header button styles so themes such as WoodMart cannot restyle the chat widget.
+* Fix Knowledge Base entries list on sites that use plain permalinks (`?rest_route=`).
+
 = 1.4.8 =
 * Plugin Check (PCP) clean: hide the launcher until OpenAI is ready, and pass WordPress.org plugin checks.
 
@@ -199,6 +203,9 @@ Yes — planned under Evaluation and observability (tokens/cost, latency, ground
 * Initial release: site-wide widget, settings, OpenAI via Connectors, rate limits.
 
 == Upgrade Notice ==
+
+= 1.4.9 =
+Fixes chat button styling on themes such as WoodMart, and the Knowledge Base entries list on plain permalinks.
 
 = 1.4.8 =
 Passes Plugin Check (PCP). The chat icon stays hidden until an OpenAI API key is configured under Connectors.

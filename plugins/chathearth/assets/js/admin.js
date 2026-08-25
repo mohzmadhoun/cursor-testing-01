@@ -80,6 +80,21 @@
 			};
 		}
 
+		function addQueryArgs(url, args) {
+			var pairs = [];
+			Object.keys(args).forEach(function (key) {
+				var value = args[key];
+				if (value === undefined || value === null || value === '') {
+					return;
+				}
+				pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(value)));
+			});
+			if (!pairs.length) {
+				return url;
+			}
+			return url + (url.indexOf('?') >= 0 ? '&' : '?') + pairs.join('&');
+		}
+
 		function setStatus(text) {
 			$status.text(text || '');
 		}
@@ -108,15 +123,20 @@
 			if (!$tbody.length) {
 				return;
 			}
-			var url = cfg.entriesUrl + '?page=' + encodeURIComponent(page);
+			var args = { page: page };
 			var q = ($search.val() || '').trim();
 			if (q) {
-				url += '&search=' + encodeURIComponent(q);
+				args.search = q;
 			}
-			fetch(url, { credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg.nonce } })
-				.then(function (r) { return r.json(); })
-				.then(function (data) {
-					var items = (data && data.items) || [];
+			fetch(addQueryArgs(cfg.entriesUrl, args), { credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg.nonce } })
+				.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+				.then(function (result) {
+					if (!result.ok) {
+						$tbody.html('<tr><td colspan="4">' + escapeHtml(cfg.i18n.syncFailed) + '</td></tr>');
+						return;
+					}
+					var data = result.data || {};
+					var items = data.items || [];
 					$tbody.empty();
 					if (!items.length) {
 						$tbody.append('<tr><td colspan="4">' + escapeHtml(cfg.i18n.empty) + '</td></tr>');
