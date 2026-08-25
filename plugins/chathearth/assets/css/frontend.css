@@ -172,8 +172,8 @@
 	font-weight: 500;
 	letter-spacing: normal;
 	line-height: 1.2;
-	min-height: 0;
-	min-width: 0;
+	min-height: 0 !important;
+	min-width: 0 !important;
 	text-decoration: none;
 	text-transform: none;
 }
