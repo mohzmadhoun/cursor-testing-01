@@ -23,35 +23,49 @@
 	bottom: 20px;
 }
 
-.chathearth-root button.chathearth-launcher {
-	appearance: none;
-	-webkit-appearance: none;
-	box-sizing: border-box;
-	width: var(--chathearth-icon-size);
-	height: var(--chathearth-icon-size);
-	margin: 0;
-	padding: 5px !important;
-	border: 2px solid var(--chathearth-icon-border);
-	background: var(--chathearth-icon-bg);
-	background-image: none;
-	color: var(--chathearth-icon-color);
-	cursor: pointer;
+/* WoodMart and similar themes style every plugin <button>. Reset first. */
+body .chathearth-root button {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	box-sizing: border-box !important;
+	font-family: inherit !important;
+	font-weight: 500 !important;
+	letter-spacing: normal !important;
+	line-height: 1.2 !important;
+	text-transform: none !important;
+	text-decoration: none !important;
+	text-shadow: none !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	min-height: 0 !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+}
+
+body .chathearth-root button.chathearth-launcher {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-	font-size: inherit;
-	line-height: 1;
-	min-height: 0;
-	min-width: 0;
+	width: var(--chathearth-icon-size) !important;
+	height: var(--chathearth-icon-size) !important;
+	padding: 5px !important;
+	border: 2px solid var(--chathearth-icon-border) !important;
+	background: var(--chathearth-icon-bg) !important;
+	background-color: var(--chathearth-icon-bg) !important;
+	background-image: none !important;
+	color: var(--chathearth-icon-color) !important;
+	cursor: pointer;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25) !important;
+	font-size: inherit !important;
+	line-height: 1 !important;
 }
 
-.chathearth-root.chathearth-shape-circle button.chathearth-launcher {
-	border-radius: 50%;
+body .chathearth-root.chathearth-shape-circle button.chathearth-launcher {
+	border-radius: 50% !important;
 }
 
-.chathearth-root.chathearth-shape-square button.chathearth-launcher {
-	border-radius: 12px;
+body .chathearth-root.chathearth-shape-square button.chathearth-launcher {
+	border-radius: 12px !important;
 }
 
 .chathearth-launcher-icon {
@@ -147,49 +161,37 @@
 	z-index: 30;
 }
 
-.chathearth-root button.chathearth-clear,
-.chathearth-root button.chathearth-expand,
-.chathearth-root button.chathearth-restore,
-.chathearth-root button.chathearth-close {
-	appearance: none;
-	-webkit-appearance: none;
-	box-sizing: border-box;
+body .chathearth-root button.chathearth-clear,
+body .chathearth-root button.chathearth-expand,
+body .chathearth-root button.chathearth-restore,
+body .chathearth-root button.chathearth-close {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin: 0;
 	padding: 4px 8px !important;
 	border: 0 !important;
-	border-radius: 6px;
+	border-radius: 6px !important;
 	background: transparent !important;
 	background-color: transparent !important;
 	background-image: none !important;
-	box-shadow: none !important;
 	color: #e2e8f0 !important;
 	cursor: pointer;
-	font-family: inherit;
 	font-size: 12px !important;
-	font-weight: 500;
-	letter-spacing: normal;
-	line-height: 1.2;
-	min-height: 0 !important;
-	min-width: 0 !important;
-	text-decoration: none;
-	text-transform: none;
+	line-height: 1.2 !important;
 }
 
-.chathearth-root button.chathearth-expand,
-.chathearth-root button.chathearth-restore,
-.chathearth-root button.chathearth-close {
-	width: 28px;
-	height: 28px;
+body .chathearth-root button.chathearth-expand,
+body .chathearth-root button.chathearth-restore,
+body .chathearth-root button.chathearth-close {
+	width: 28px !important;
+	height: 28px !important;
 	padding: 5px !important;
 }
 
-.chathearth-root button.chathearth-clear:hover,
-.chathearth-root button.chathearth-expand:hover,
-.chathearth-root button.chathearth-restore:hover,
-.chathearth-root button.chathearth-close:hover {
+body .chathearth-root button.chathearth-clear:hover,
+body .chathearth-root button.chathearth-expand:hover,
+body .chathearth-root button.chathearth-restore:hover,
+body .chathearth-root button.chathearth-close:hover {
 	background: rgba(255, 255, 255, 0.12) !important;
 	background-color: rgba(255, 255, 255, 0.12) !important;
 	color: #fff !important;
@@ -205,9 +207,9 @@
 	display: none !important;
 }
 
-.chathearth-root button.chathearth-close {
+body .chathearth-root button.chathearth-close {
 	font-size: 20px !important;
-	line-height: 1;
+	line-height: 1 !important;
 }
 
 .chathearth-messages {
@@ -559,14 +561,14 @@
 	color: #475569;
 }
 
-.chathearth-recaptcha-continue {
-	appearance: none;
-	border: 0;
-	border-radius: 999px;
-	padding: 10px 18px;
-	background: #0f172a;
-	color: #fff;
-	font-size: 13px;
+body .chathearth-root button.chathearth-recaptcha-continue {
+	border: 0 !important;
+	border-radius: 999px !important;
+	padding: 10px 18px !important;
+	background: #0f172a !important;
+	background-color: #0f172a !important;
+	color: #fff !important;
+	font-size: 13px !important;
 	cursor: pointer;
 }
 
@@ -590,17 +592,19 @@
 	display: none;
 }
 
-.chathearth-chip {
-	border: 1px solid #cbd5e1;
-	background: #fff;
-	border-radius: 999px;
-	padding: 6px 10px;
+body .chathearth-root button.chathearth-chip {
+	border: 1px solid #cbd5e1 !important;
+	background: #fff !important;
+	background-color: #fff !important;
+	border-radius: 999px !important;
+	padding: 6px 10px !important;
 	cursor: pointer;
-	font-size: 12px;
+	font-size: 12px !important;
+	color: #0f172a !important;
 }
 
-.chathearth-chip:hover {
-	border-color: #94a3b8;
+body .chathearth-root button.chathearth-chip:hover {
+	border-color: #94a3b8 !important;
 }
 
 .chathearth-composer {
@@ -618,13 +622,15 @@
 	padding: 10px 12px;
 }
 
-.chathearth-send {
-	border: 0;
-	border-radius: 10px;
-	background: #0f172a;
-	color: #fff;
-	padding: 0 14px;
+body .chathearth-root button.chathearth-send {
+	border: 0 !important;
+	border-radius: 10px !important;
+	background: #0f172a !important;
+	background-color: #0f172a !important;
+	color: #fff !important;
+	padding: 0 14px !important;
 	cursor: pointer;
+	font-size: 14px !important;
 }
 
 .chathearth-dots {
