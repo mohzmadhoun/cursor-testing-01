@@ -65,7 +65,8 @@ Stops themes such as WoodMart from restyling the chat launcher and header button
 - `3787c65` Keep WoodMart from forcing min-height on header buttons
 - `55dda0d` Join Knowledge Base list query args without a second question mark
 - `1a10953` Keep WoodMart from restyling ChatHearth widget buttons
-- `_this entry_` Record 1.4.9 verification and add the installable zip
+- `c5c2a1d` Record 1.4.9 verification and add the installable zip
+- `_this entry_` Document 1.4.9 WoodMart and Knowledge Base verification
 
 ---
 
