@@ -25,6 +25,39 @@ its hash cannot be known before the entry is committed.
 
 ---
 
+## PR #9 — WoodMart widget styles and Knowledge Base entries 404
+
+_2026-08-25_
+
+### Summary
+
+Stops themes such as WoodMart from restyling the chat launcher and header buttons, and fixes the Knowledge Base entries list on sites that use plain permalinks.
+
+### Changed
+
+- Plugin version **1.4.9**.
+- Launcher padding is 5px; header Clear / expand / restore / close buttons reset background, padding, and font size under `.chathearth-root`.
+- Admin JS appends `page` / `search` with `URLSearchParams` so `index.php?rest_route=/chathearth/v1/kb/entries` does not become `.../entries?page=1`.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `composer check` | Pending |
+| Knowledge Base entries URL | Pending |
+| Homepage widget | Pending |
+
+### Notes
+
+- Syncing before enabling RAG is supported; the empty table was a 404 on the entries route, not a RAG-off restriction.
+- This PR is stacked on `cursor/chathearth-plugin-check-36a8`.
+
+### Commits
+
+- `_this entry_` Reset chat buttons and fix Knowledge Base entries URLs
+
+---
+
 ## PR #8 — ChatHearth Plugin Check (PCP) fixes
 
 _2026-08-22_

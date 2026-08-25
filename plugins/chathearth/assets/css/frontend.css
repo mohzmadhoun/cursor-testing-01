@@ -23,25 +23,34 @@
 	bottom: 20px;
 }
 
-.chathearth-launcher {
+.chathearth-root button.chathearth-launcher {
+	appearance: none;
+	-webkit-appearance: none;
+	box-sizing: border-box;
 	width: var(--chathearth-icon-size);
 	height: var(--chathearth-icon-size);
+	margin: 0;
+	padding: 5px !important;
 	border: 2px solid var(--chathearth-icon-border);
 	background: var(--chathearth-icon-bg);
+	background-image: none;
 	color: var(--chathearth-icon-color);
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-	padding: 0;
+	font-size: inherit;
+	line-height: 1;
+	min-height: 0;
+	min-width: 0;
 }
 
-.chathearth-root.chathearth-shape-circle .chathearth-launcher {
+.chathearth-root.chathearth-shape-circle button.chathearth-launcher {
 	border-radius: 50%;
 }
 
-.chathearth-root.chathearth-shape-square .chathearth-launcher {
+.chathearth-root.chathearth-shape-square button.chathearth-launcher {
 	border-radius: 12px;
 }
 
@@ -138,35 +147,52 @@
 	z-index: 30;
 }
 
-.chathearth-clear,
-.chathearth-expand,
-.chathearth-restore,
-.chathearth-close {
-	background: transparent;
-	border: 0;
-	color: #e2e8f0;
-	cursor: pointer;
-	font-size: 12px;
-	padding: 4px 6px;
-}
-
-.chathearth-expand,
-.chathearth-restore,
-.chathearth-close {
+.chathearth-root button.chathearth-clear,
+.chathearth-root button.chathearth-expand,
+.chathearth-root button.chathearth-restore,
+.chathearth-root button.chathearth-close {
+	appearance: none;
+	-webkit-appearance: none;
+	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
-	padding: 0;
+	margin: 0;
+	padding: 4px 8px !important;
+	border: 0 !important;
 	border-radius: 6px;
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	color: #e2e8f0 !important;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 12px !important;
+	font-weight: 500;
+	letter-spacing: normal;
+	line-height: 1.2;
+	min-height: 0;
+	min-width: 0;
+	text-decoration: none;
+	text-transform: none;
 }
 
-.chathearth-expand:hover,
-.chathearth-restore:hover,
-.chathearth-close:hover {
-	background: rgba(255, 255, 255, 0.12);
-	color: #fff;
+.chathearth-root button.chathearth-expand,
+.chathearth-root button.chathearth-restore,
+.chathearth-root button.chathearth-close {
+	width: 28px;
+	height: 28px;
+	padding: 5px !important;
+}
+
+.chathearth-root button.chathearth-clear:hover,
+.chathearth-root button.chathearth-expand:hover,
+.chathearth-root button.chathearth-restore:hover,
+.chathearth-root button.chathearth-close:hover {
+	background: rgba(255, 255, 255, 0.12) !important;
+	background-color: rgba(255, 255, 255, 0.12) !important;
+	color: #fff !important;
 }
 
 .chathearth-expand svg,
@@ -179,8 +205,8 @@
 	display: none !important;
 }
 
-.chathearth-close {
-	font-size: 20px;
+.chathearth-root button.chathearth-close {
+	font-size: 20px !important;
 	line-height: 1;
 }
 
