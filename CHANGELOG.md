@@ -37,7 +37,7 @@ Stops themes such as WoodMart from restyling the chat launcher and header button
 
 - Plugin version **1.4.9**.
 - Launcher padding is 5px; header Clear / expand / restore / close buttons reset background, padding, and font size under `.chathearth-root`.
-- Admin JS appends `page` / `search` with `URLSearchParams` so `index.php?rest_route=/chathearth/v1/kb/entries` does not become `.../entries?page=1`.
+- Admin JS appends `page` / `search` with `&` when the REST URL already has `?rest_route=`, so the list request is not `.../entries?page=1`.
 
 ### Verification
 

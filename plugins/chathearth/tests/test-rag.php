@@ -369,6 +369,7 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$this->assertSame( '1', (string) $query['page'] );
 		$this->assertSame( 'hat', $query['search'] );
 		$this->assertStringNotContainsString( 'entries?page=', $url );
+		$this->assertStringContainsString( 'entries&page=', $url );
 	}
 
 	public function test_kb_entries_lists_rows_when_rag_is_disabled() {
@@ -393,8 +394,8 @@ class Test_ChatHearth_Rag extends WP_UnitTestCase {
 		$controller = new Kb_Controller();
 		$request    = new WP_REST_Request( 'GET', '/chathearth/v1/kb/entries' );
 		$request->set_param( 'page', 1 );
-		$response   = $controller->handle_entries( $request );
-		$data       = $response->get_data();
+		$response = $controller->handle_entries( $request );
+		$data     = $response->get_data();
 
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertGreaterThanOrEqual( 1, (int) $data['total'] );

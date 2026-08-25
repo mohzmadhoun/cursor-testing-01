@@ -81,15 +81,18 @@
 		}
 
 		function addQueryArgs(url, args) {
-			var parsed = new URL(url, window.location.origin);
+			var pairs = [];
 			Object.keys(args).forEach(function (key) {
 				var value = args[key];
 				if (value === undefined || value === null || value === '') {
 					return;
 				}
-				parsed.searchParams.set(key, String(value));
+				pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(value)));
 			});
-			return parsed.toString();
+			if (!pairs.length) {
+				return url;
+			}
+			return url + (url.indexOf('?') >= 0 ? '&' : '?') + pairs.join('&');
 		}
 
 		function setStatus(text) {
